@@ -1,6 +1,5 @@
 package narek.hakobyan.mypassword;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -51,18 +50,16 @@ public class PasswordDetailActivity extends AppCompatActivity {
 
         btnEdit.setOnClickListener(v -> showEditDialog());
 
-        btnDelete.setOnClickListener(v -> {
-            new AlertDialog.Builder(this)
-                    .setTitle("Delete")
-                    .setMessage("Delete entry for " + entry.site + "?")
-                    .setPositiveButton("Delete", (dialog, which) -> {
-                        dbHelper.deletePassword(entryId);
-                        Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
-                        finish();
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
-        });
+        btnDelete.setOnClickListener(v -> new AlertDialog.Builder(this)
+                .setTitle("Delete")
+                .setMessage("Delete entry for " + entry.site + "?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    dbHelper.deletePassword(entryId);
+                    Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .setNegativeButton("Cancel", null)
+                .show());
     }
 
     private void loadEntry() {
@@ -86,29 +83,41 @@ public class PasswordDetailActivity extends AppCompatActivity {
         etLogin.setText(entry.login);
         etPassword.setText(entry.password);
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Edit")
                 .setView(redactor)
-                .setPositiveButton("Save", (dialog, which) -> {
-                    String newSite = etSite.getText().toString().trim();
-                    String newLogin = etLogin.getText().toString().trim();
-                    String newPassword = etPassword.getText().toString().trim();
-
-                    if (newSite.isEmpty()) {
-                        Toast.makeText(this, "Enter site", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    if (!PasswordSecurityUtils.isValidPassword(newPassword)) {
-                        Toast.makeText(this, PasswordSecurityUtils.VALIDATION_ERROR_MESSAGE, Toast.LENGTH_LONG).show();
-                        return;
-                    }
-
-                    dbHelper.updatePassword(entryId, newSite, newLogin, newPassword);
-                    Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
-                    loadEntry();
-                })
+                .setPositiveButton("Save", null)
                 .setNegativeButton("Cancel", null)
-                .show();
+                .create();
+
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String newSite = etSite.getText().toString().trim();
+            String newLogin = etLogin.getText().toString().trim();
+            String newPassword = etPassword.getText().toString().trim();
+
+            if (newSite.isEmpty()) {
+                etSite.setError("Enter site");
+                etSite.requestFocus();
+                return;
+            }
+
+            if (newLogin.isEmpty()) {
+                etLogin.setError("Enter login");
+                etLogin.requestFocus();
+                return;
+            }
+
+            if (!PasswordSecurityUtils.isValidPassword(newPassword)) {
+                Toast.makeText(this, PasswordSecurityUtils.VALIDATION_ERROR_MESSAGE, Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            dbHelper.updatePassword(entryId, newSite, newLogin, newPassword);
+            Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+            loadEntry();
+        }));
+
+        dialog.show();
     }
 }

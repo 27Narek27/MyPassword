@@ -22,18 +22,29 @@ public class dialog_password extends AppCompatActivity {
         generate.setOnClickListener(v -> password.setText(PasswordSecurityUtils.generateStrongPassword(16)));
 
         save.setOnClickListener(v -> {
+            String siteVal = site.getText().toString().trim();
+            String loginVal = login.getText().toString().trim();
             String rawPassword = password.getText().toString();
+
+            if (siteVal.isEmpty()) {
+                site.setError("Enter site");
+                site.requestFocus();
+                return;
+            }
+
+            if (loginVal.isEmpty()) {
+                login.setError("Enter login");
+                login.requestFocus();
+                return;
+            }
+
             if (!PasswordSecurityUtils.isValidPassword(rawPassword)) {
                 Toast.makeText(this, PasswordSecurityUtils.VALIDATION_ERROR_MESSAGE, Toast.LENGTH_LONG).show();
                 return;
             }
 
             DatabaseHelper dbHelper = new DatabaseHelper(this);
-            dbHelper.insertPassword(
-                    site.getText().toString(),
-                    login.getText().toString(),
-                    rawPassword
-            );
+            dbHelper.insertPassword(siteVal, loginVal, rawPassword);
             finish();
         });
     }
