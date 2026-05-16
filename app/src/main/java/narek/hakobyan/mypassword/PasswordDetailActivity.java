@@ -108,7 +108,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
     private void showEditDialog() {
         View redactor   = getLayoutInflater().inflate(R.layout.redactor, null);
         EditText etSite = redactor.findViewById(R.id.etSite);
-        EditText etUrl  = redactor.findViewById(R.id.etWebsiteUrl)
+        EditText etUrl  = redactor.findViewById(R.id.etWebsiteUrl);
         EditText etLogin = redactor.findViewById(R.id.etLogin);
         EditText etPass  = redactor.findViewById(R.id.etPassword);
 
