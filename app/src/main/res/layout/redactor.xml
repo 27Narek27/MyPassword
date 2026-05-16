@@ -1,78 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:background="#99482A">
-
-
-
-    <!-- Site -->
-    <com.google.android.material.textfield.TextInputLayout
+    android:background="#99482A"
+    android:fillViewport="true">
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        app:boxStrokeColor="#9CBA7F"
-        app:boxBackgroundColor="#7A3A22"
-        app:hintTextColor="#9CBA7F"
-        app:boxBackgroundMode="outline"
-        app:cornerRadius="10dp"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etSite"
+        android:orientation="vertical"
+        android:padding="24dp">
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Site"
-            android:minHeight="48dp" />
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Login -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        app:boxStrokeColor="#9CBA7F"
-        app:boxBackgroundColor="#7A3A22"
-        app:hintTextColor="#9CBA7F"
-        app:boxBackgroundMode="outline"
-        app:cornerRadius="10dp"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etLogin"
+            android:layout_marginBottom="12dp"
+            app:boxStrokeColor="#9CBA7F"
+            app:boxBackgroundColor="#7A3A22"
+            app:hintTextColor="#9CBA7F"
+            app:boxBackgroundMode="outline"
+            app:cornerRadius="10dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etSite"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Title / Site Name"
+                android:minHeight="48dp"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Login"
-            android:minHeight="48dp" />
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Password -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        app:boxStrokeColor="#9CBA7F"
-        app:boxBackgroundColor="#7A3A22"
-        app:hintTextColor="#9CBA7F"
-        app:boxBackgroundMode="outline"
-        app:cornerRadius="10dp"
-        app:passwordToggleEnabled="true"
-        app:passwordToggleTint="#9CBA7F"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etPassword"
+            android:layout_marginBottom="12dp"
+            app:boxStrokeColor="#9CBA7F"
+            app:boxBackgroundColor="#7A3A22"
+            app:hintTextColor="#9CBA7F"
+            app:boxBackgroundMode="outline"
+            app:cornerRadius="10dp"
+            app:startIconDrawable="@drawable/ic_link"
+            app:startIconTint="#9CBA7F"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etWebsiteUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Website URL (e.g. https://example.com)"
+                android:minHeight="48dp"
+                android:inputType="textUri" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Password"
-            android:inputType="textPassword"
-            android:minHeight="48dp" />
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-</LinearLayout>
+            android:layout_marginBottom="12dp"
+            app:boxStrokeColor="#9CBA7F"
+            app:boxBackgroundColor="#7A3A22"
+            app:hintTextColor="#9CBA7F"
+            app:boxBackgroundMode="outline"
+            app:cornerRadius="10dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etLogin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Login / Username"
+                android:minHeight="48dp"
+                android:inputType="textEmailAddress" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:boxStrokeColor="#9CBA7F"
+            app:boxBackgroundColor="#7A3A22"
+            app:hintTextColor="#9CBA7F"
+            app:boxBackgroundMode="outline"
+            app:cornerRadius="10dp"
+            app:passwordToggleEnabled="true"
+            app:passwordToggleTint="#9CBA7F"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Password"
+                android:inputType="textPassword"
+                android:minHeight="48dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+</ScrollView>

@@ -15,21 +15,24 @@ public class MasterPasswordManager {
     }
 
     public boolean hasMasterPassword() {
-        String savedPassword = preferences.getString(KEY_PASSWORD, null);
-        return savedPassword != null && !savedPassword.isEmpty();
+        String saved = preferences.getString(KEY_PASSWORD, null);
+        return saved != null && !saved.isEmpty();
     }
 
+    /**
+     * Persists the master password after strict validation.
+     * Throws {@link IllegalArgumentException} if the password does not meet policy.
+     */
     public void saveMasterPassword(String password) {
-        if (!PasswordSecurityUtils.isValidPassword(password)) {
-            throw new IllegalArgumentException(PasswordSecurityUtils.VALIDATION_ERROR_MESSAGE);
+        if (!PasswordSecurityUtils.isValidMasterPassword(password)) {
+            throw new IllegalArgumentException(
+                    PasswordSecurityUtils.MASTER_VALIDATION_ERROR_MESSAGE);
         }
-        preferences.edit()
-                .putString(KEY_PASSWORD, password)
-                .apply();
+        preferences.edit().putString(KEY_PASSWORD, password).apply();
     }
 
     public boolean verifyMasterPassword(String password) {
-        String savedPassword = preferences.getString(KEY_PASSWORD, null);
-        return savedPassword != null && savedPassword.equals(password);
+        String saved = preferences.getString(KEY_PASSWORD, null);
+        return saved != null && saved.equals(password);
     }
 }

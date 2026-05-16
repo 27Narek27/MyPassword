@@ -15,24 +15,22 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String LOGIN_SECURITY_PREFS = "login_security_prefs";
-    private static final String KEY_FAILED_ATTEMPTS = "failed_master_password_attempts";
-    private static final int MAX_FAILED_ATTEMPTS = 10;
+    private static final String LOGIN_SECURITY_PREFS  = "login_security_prefs";
+    private static final String KEY_FAILED_ATTEMPTS   = "failed_master_password_attempts";
+    private static final int    MAX_FAILED_ATTEMPTS   = 10;
 
     private MasterPasswordManager masterPasswordManager;
-    private SharedPreferences loginSecurityPreferences;
+    private SharedPreferences     loginSecurityPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        masterPasswordManager = new MasterPasswordManager(this);
+        masterPasswordManager    = new MasterPasswordManager(this);
         loginSecurityPreferences = getSharedPreferences(LOGIN_SECURITY_PREFS, MODE_PRIVATE);
 
         Button open = findViewById(R.id.btnOpen);
-
-
         open.setOnClickListener(v -> {
             if (masterPasswordManager.hasMasterPassword()) {
                 showUnlockDialog();
@@ -42,65 +40,63 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
     private void showCreateMasterPasswordDialog() {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
-        int padding = (int) (16 * getResources().getDisplayMetrics().density);
-        layout.setPadding(padding, padding, padding, 0);
+        int dp16 = dp(16);
+        layout.setPadding(dp16, dp16, dp16, 0);
 
-        EditText passwordInput = new EditText(this);
-        passwordInput.setHint("Create master password");
-        passwordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-
-        EditText confirmInput = new EditText(this);
-        confirmInput.setHint("Confirm master password");
-        confirmInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-
+        EditText passwordInput = makePasswordInput("Create master password");
+        EditText confirmInput  = makePasswordInput("Confirm master password");
         layout.addView(passwordInput);
         layout.addView(confirmInput);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Master password")
-                .setMessage("Create password to protect the app")
+                .setMessage("Create a password to protect the app.\n\n"
+                        + "Requirements: ≥16 characters, uppercase, digit, special character.")
                 .setView(layout)
                 .setCancelable(false)
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Save", null)
+                .setPositiveButton("Save",   null)
                 .create();
 
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            String password = passwordInput.getText().toString().trim();
-            String confirm = confirmInput.getText().toString().trim();
+        dialog.setOnShowListener(d ->
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                    String password = passwordInput.getText().toString().trim();
+                    String confirm  = confirmInput.getText().toString().trim();
 
-            if (!PasswordSecurityUtils.isValidPassword(password)) {
-                Toast.makeText(this, PasswordSecurityUtils.VALIDATION_ERROR_MESSAGE, Toast.LENGTH_LONG).show();
-            }
+                    // Strict validation for the MASTER password only
+                    if (!PasswordSecurityUtils.isValidMasterPassword(password)) {
+                        passwordInput.setError(
+                                PasswordSecurityUtils.MASTER_VALIDATION_ERROR_MESSAGE);
+                        return;
+                    }
+                    if (!TextUtils.equals(password, confirm)) {
+                        confirmInput.setError("Passwords do not match");
+                        confirmInput.requestFocus();
+                        return;
+                    }
 
-            if (!TextUtils.equals(password, confirm)) {
-                Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
-                return;
-            }
+                    try {
+                        masterPasswordManager.saveMasterPassword(password);
+                    } catch (IllegalArgumentException e) {
+                        passwordInput.setError(e.getMessage());
+                        return;
+                    }
 
-            try {
-                masterPasswordManager.saveMasterPassword(password);
-            } catch (IllegalArgumentException e) {
-                passwordInput.setError(e.getMessage());
-                return;
-            }
-            resetFailedAttempts();
-            dialog.dismiss();
-            openPasswordScreen();
-        }));
+                    resetFailedAttempts();
+                    dialog.dismiss();
+                    openPasswordScreen();
+                }));
 
         dialog.show();
     }
-
     private void showUnlockDialog() {
-        EditText passwordInput = new EditText(this);
-        int padding = (int) (16 * getResources().getDisplayMetrics().density);
-        passwordInput.setPadding(padding, padding, padding, padding);
-        passwordInput.setHint("Enter master password");
-        passwordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        EditText passwordInput = makePasswordInput("Enter master password");
+        int dp16 = dp(16);
+        passwordInput.setPadding(dp16, dp16, dp16, dp16);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Unlock app")
@@ -109,31 +105,31 @@ public class MainActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Unlock", null)
                 .create();
-
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            String password = passwordInput.getText().toString().trim();
-            if (masterPasswordManager.verifyMasterPassword(password)) {
-                resetFailedAttempts();
-                dialog.dismiss();
-                openPasswordScreen();
-            } else {
-                int failedAttempts = incrementFailedAttempts();
-                if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
-                    performEmergencyWipe();
-                    dialog.dismiss();
-                    return;
-                }
-                Toast.makeText(this, "Wrong password", Toast.LENGTH_SHORT).show();
-            }
-        }));
+        dialog.setOnShowListener(d ->
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                    String password = passwordInput.getText().toString().trim();
+                    if (masterPasswordManager.verifyMasterPassword(password)) {
+                        resetFailedAttempts();
+                        dialog.dismiss();
+                        openPasswordScreen();
+                    } else {
+                        int failed = incrementFailedAttempts();
+                        if (failed >= MAX_FAILED_ATTEMPTS) {
+                            performEmergencyWipe();
+                            dialog.dismiss();
+                            return;
+                        }
+                        passwordInput.setError("Wrong password (" + failed
+                                + "/" + MAX_FAILED_ATTEMPTS + " attempts)");
+                    }
+                }));
 
         dialog.show();
     }
-
     private void openPasswordScreen() {
-        Intent intent = new Intent(MainActivity.this, main_displey.class);
-        startActivity(intent);
+        startActivity(new Intent(this, main_displey.class));
     }
+
 
     private int incrementFailedAttempts() {
         int attempts = loginSecurityPreferences.getInt(KEY_FAILED_ATTEMPTS, 0) + 1;
@@ -145,34 +141,36 @@ public class MainActivity extends AppCompatActivity {
         loginSecurityPreferences.edit().putInt(KEY_FAILED_ATTEMPTS, 0).apply();
     }
 
+
     private void performEmergencyWipe() {
-        // ВНИМАНИЕ: безвозвратно удаляем локальную БД с сохранёнными паролями.
         deleteDatabase("passwords.db");
-
         clearAllSharedPreferences();
-
-        // ВНИМАНИЕ: удаляем ключ AES-GCM из Keystore — расшифровать старые данные больше нельзя.
         new CryptoManager().resetKeyMaterial();
-
         resetFailedAttempts();
-        Toast.makeText(this, "Data deleted after 10 failed login attempts", Toast.LENGTH_LONG).show();
+        Toast.makeText(this,
+                "Data deleted after " + MAX_FAILED_ATTEMPTS + " failed login attempts",
+                Toast.LENGTH_LONG).show();
         recreate();
     }
-
     private void clearAllSharedPreferences() {
-        java.io.File sharedPrefsDir = new java.io.File(getApplicationInfo().dataDir, "shared_prefs");
-        java.io.File[] prefFiles = sharedPrefsDir.listFiles();
-        if (prefFiles == null) {
-            return;
+        java.io.File dir   = new java.io.File(getApplicationInfo().dataDir, "shared_prefs");
+        java.io.File[] files = dir.listFiles();
+        if (files == null) return;
+        for (java.io.File f : files) {
+            String name = f.getName();
+            if (!name.endsWith(".xml")) continue;
+            getSharedPreferences(name.substring(0, name.length() - 4), MODE_PRIVATE)
+                    .edit().clear().apply();
         }
-
-        for (java.io.File prefFile : prefFiles) {
-            String fileName = prefFile.getName();
-            if (!fileName.endsWith(".xml")) {
-                continue;
-            }
-            String prefName = fileName.substring(0, fileName.length() - 4);
-            getSharedPreferences(prefName, MODE_PRIVATE).edit().clear().apply();
-        }
+    }
+    private EditText makePasswordInput(String hint) {
+        EditText et = new EditText(this);
+        et.setHint(hint);
+        et.setInputType(InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        return et;
+    }
+    private int dp(int value) {
+        return (int) (value * getResources().getDisplayMetrics().density);
     }
 }
