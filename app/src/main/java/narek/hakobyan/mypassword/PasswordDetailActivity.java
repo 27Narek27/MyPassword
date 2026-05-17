@@ -65,7 +65,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
                     tvWebsiteUrl.getPaintFlags()
                             | android.graphics.Paint.UNDERLINE_TEXT_FLAG);
             tvWebsiteUrl.setOnClickListener(v ->
-                    WebViewAutoLoginActivity.launch(
+                    Webviewautologinactivity.launch(
                             this, entry.websiteUrl, entry.login, entry.password));
             btnAutoLogin.setVisibility(View.VISIBLE);
         } else {
@@ -87,7 +87,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT).show();
                 return;
             }
-            WebViewAutoLoginActivity.launch(
+            Webviewautologinactivity.launch(
                     this, entry.websiteUrl, entry.login, entry.password);
         });
 

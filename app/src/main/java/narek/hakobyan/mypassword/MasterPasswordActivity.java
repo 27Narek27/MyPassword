@@ -55,8 +55,8 @@ public class MasterPasswordActivity extends AppCompatActivity {
                 return;
             }
 
-            if (!hasExistingPassword && !PasswordSecurityUtils.isValidPassword(password)) {
-                passwordInput.setError(PasswordSecurityUtils.VALIDATION_ERROR_MESSAGE);
+            if (!hasExistingPassword && !PasswordSecurityUtils.isValidMasterPassword(password)) {
+                passwordInput.setError(PasswordSecurityUtils.MASTER_VALIDATION_ERROR_MESSAGE);
                 return;
             }
 
@@ -98,12 +98,11 @@ public class MasterPasswordActivity extends AppCompatActivity {
     }
 
     private void performEmergencyWipe() {
-        // ВНИМАНИЕ: Ниже выполняется безвозвратное удаление базы с паролями приложения.
+
         deleteDatabase("passwords.db");
 
         clearAllSharedPreferences();
 
-        // ВНИМАНИЕ: После удаления ключа из Android Keystore старые зашифрованные данные восстановить нельзя.
         new CryptoManager().resetKeyMaterial();
 
         hasExistingPassword = false;

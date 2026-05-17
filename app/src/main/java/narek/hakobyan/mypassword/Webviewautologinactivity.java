@@ -1,4 +1,5 @@
 package narek.hakobyan.mypassword;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -13,8 +14,10 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
-public class WebViewAutoLoginActivity extends AppCompatActivity {
+
+public class Webviewautologinactivity extends AppCompatActivity {
     public static final String EXTRA_URL      = "extra_url";
     public static final String EXTRA_LOGIN    = "extra_login";
     public static final String EXTRA_PASSWORD = "extra_password";
@@ -22,9 +25,9 @@ public class WebViewAutoLoginActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private String login;
     private String password;
-    public static void launch(Context context,
-                              String url, String login, String password) {
-        Intent intent = new Intent(context, WebViewAutoLoginActivity.class);
+
+    public static void launch(Context context, String url, String login, String password) {
+        Intent intent = new Intent(context, Webviewautologinactivity.class);
         intent.putExtra(EXTRA_URL,      normaliseUrl(url));
         intent.putExtra(EXTRA_LOGIN,    login);
         intent.putExtra(EXTRA_PASSWORD, password);
@@ -52,6 +55,17 @@ public class WebViewAutoLoginActivity extends AppCompatActivity {
 
         configureWebView();
 
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (webView != null && webView.canGoBack()) {
+                    webView.goBack();
+                } else {
+                    finish();
+                }
+            }
+        });
+
         webView.loadUrl(url);
     }
 
@@ -66,16 +80,6 @@ public class WebViewAutoLoginActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    @Override
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     private void configureWebView() {
         WebSettings settings = webView.getSettings();
@@ -83,8 +87,8 @@ public class WebViewAutoLoginActivity extends AppCompatActivity {
         settings.setDomStorageEnabled(true);
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
-        settings.setSavePassword(false);
-        settings.setSaveFormData(false);
+
+
         webView.addJavascriptInterface(new AutoFillBridge(), "__AutoFillBridge__");
         webView.setWebViewClient(new AutoLoginWebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
@@ -132,14 +136,12 @@ public class WebViewAutoLoginActivity extends AppCompatActivity {
                         + "  var submitBtn = document.querySelector(\n"
                         + "    'button[type=\"submit\"], input[type=\"submit\"]');\n"
                         + "  if (submitBtn) submitBtn.focus();\n"
-
                         + "  return 'ok';\n"
                         + "})();";
 
-        webView.evaluateJavascript(js, result -> {
-
-        });
+        webView.evaluateJavascript(js, result -> {});
     }
+
     private static String escapeForJs(String raw) {
         return raw
                 .replace("\\", "\\\\")
@@ -147,7 +149,7 @@ public class WebViewAutoLoginActivity extends AppCompatActivity {
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
-                .replace("</", "<\\/");  // Prevent </script> injection
+                .replace("</", "<\\/");
     }
 
     private static String normaliseUrl(String url) {
@@ -157,8 +159,8 @@ public class WebViewAutoLoginActivity extends AppCompatActivity {
         }
         return url;
     }
-    private class AutoLoginWebViewClient extends WebViewClient {
 
+    private class AutoLoginWebViewClient extends WebViewClient {
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             progressBar.setVisibility(View.VISIBLE);
@@ -171,11 +173,16 @@ public class WebViewAutoLoginActivity extends AppCompatActivity {
         }
 
         @Override
-        public boolean shouldOverrideUrlLoading(WebView view,
-                                                WebResourceRequest request) {
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             return false;
         }
     }
     private static final class AutoFillBridge {
+
+
+        @JavascriptInterface
+        public String toString() {
+            return "AutoFillBridge";
+        }
     }
 }

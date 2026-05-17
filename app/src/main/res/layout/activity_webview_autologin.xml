@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#99482A">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
@@ -12,6 +14,7 @@
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
         android:background="#7A3A22">
+
         <ImageButton
             android:id="@+id/btnWebViewBack"
             android:layout_width="40dp"
@@ -19,7 +22,7 @@
             android:src="@drawable/ic_lock"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Back"
-            android:tint="#9CBA7F" />
+            app:tint="#9CBA7F" />
         <TextView
             android:id="@+id/tvWebViewTitle"
             android:layout_width="0dp"

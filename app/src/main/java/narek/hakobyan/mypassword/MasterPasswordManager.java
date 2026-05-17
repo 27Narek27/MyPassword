@@ -19,10 +19,6 @@ public class MasterPasswordManager {
         return saved != null && !saved.isEmpty();
     }
 
-    /**
-     * Persists the master password after strict validation.
-     * Throws {@link IllegalArgumentException} if the password does not meet policy.
-     */
     public void saveMasterPassword(String password) {
         if (!PasswordSecurityUtils.isValidMasterPassword(password)) {
             throw new IllegalArgumentException(
