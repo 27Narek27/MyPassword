@@ -34,6 +34,30 @@ public final class PasswordSecurityUtils {
     public static final String ENTRY_VALIDATION_ERROR_MESSAGE =
             "Password field cannot be empty";
 
+
+    public static int calculateStrengthScore(String password) {
+        if (password == null || password.isEmpty()) return 0;
+        int score = 0;
+        int len = password.length();
+        if (len >= 8) score += 20;
+        if (len >= 12) score += 20;
+        if (len >= 16) score += 15;
+
+        boolean hasLower = false, hasUpper = false, hasDigit = false, hasSpecial = false;
+        for (int i = 0; i < len; i++) {
+            char c = password.charAt(i);
+            if (Character.isLowerCase(c)) hasLower = true;
+            else if (Character.isUpperCase(c)) hasUpper = true;
+            else if (Character.isDigit(c)) hasDigit = true;
+            else hasSpecial = true;
+        }
+        if (hasLower) score += 10;
+        if (hasUpper) score += 15;
+        if (hasDigit) score += 15;
+        if (hasSpecial) score += 20;
+        return Math.min(score, 100);
+    }
+
     public static String generateStrongPassword(int length) {
         int resultLength = Math.max(length, MIN_MASTER_PASSWORD_LENGTH);
         char[] passwordChars = new char[resultLength];
