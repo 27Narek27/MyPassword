@@ -33,9 +33,11 @@ public class main_displey extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SecureScreenUtils.apply(this);
         setContentView(R.layout.activity_main_displey);
 
         Button add   = findViewById(R.id.btnAddPassword);
+        Button dashboard = findViewById(R.id.btnHealthDashboard);
         listView     = findViewById(R.id.listPasswords);
         etSearch     = findViewById(R.id.etSearch);
 
@@ -57,6 +59,8 @@ public class main_displey extends AppCompatActivity {
 
         add.setOnClickListener(v ->
                 startActivity(new Intent(main_displey.this, dialog_password.class)));
+        dashboard.setOnClickListener(v ->
+                startActivity(new Intent(main_displey.this, PasswordHealthDashboardActivity.class)));
 
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
@@ -134,8 +138,8 @@ public class main_displey extends AppCompatActivity {
         @Override
         public void onBindViewHolder(VH h, int pos) {
             DatabaseHelper.PasswordEntry e = items.get(pos);
-            h.tvServiceName.setText(!e.site.isEmpty() ? e.site : "(без названия)");
-            h.tvEmail.setText(e.login != null ? e.login : "");
+            h.tvServiceName.setText((e.isFavorite ? "★ " : "") + (!e.site.isEmpty() ? e.site : "(без названия)"));
+            h.tvEmail.setText((e.login != null ? e.login : "") + " • " + (e.category != null ? e.category : "Общее"));
             h.itemView.setOnClickListener(v -> { if (itemListener != null) itemListener.onClick(pos); });
             h.btnCopy.setOnClickListener(v -> { if (copyListener != null) copyListener.onCopy(pos); });
         }

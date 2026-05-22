@@ -26,6 +26,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SecureScreenUtils.apply(this);
         setContentView(R.layout.activity_password_detail);
 
         dbHelper = new DatabaseHelper(this);
