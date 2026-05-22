@@ -17,11 +17,6 @@ public class PasswordHealthDashboardActivity extends AppCompatActivity {
 
     private DatabaseHelper dbHelper;
 
-import android.widget.TextView;
-
-import androidx.appcompat.app.AppCompatActivity;
-
-public class PasswordHealthDashboardActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

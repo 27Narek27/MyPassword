@@ -38,6 +38,8 @@ public class main_displey extends AppCompatActivity {
 
         Button add   = findViewById(R.id.btnAddPassword);
         Button dashboard = findViewById(R.id.btnHealthDashboard);
+        Button honeytoken = findViewById(R.id.btnHoneytoken);
+        Button camouflage = findViewById(R.id.btnToggleCamouflage);
         listView     = findViewById(R.id.listPasswords);
         etSearch     = findViewById(R.id.etSearch);
 
@@ -61,6 +63,15 @@ public class main_displey extends AppCompatActivity {
                 startActivity(new Intent(main_displey.this, dialog_password.class)));
         dashboard.setOnClickListener(v ->
                 startActivity(new Intent(main_displey.this, PasswordHealthDashboardActivity.class)));
+        honeytoken.setOnClickListener(v -> {
+            int count = dbHelper.insertHoneytokenData();
+            Toast.makeText(this, "Honeytokens added: " + count, Toast.LENGTH_SHORT).show();
+            loadPasswords();
+        });
+        camouflage.setOnClickListener(v -> {
+            CamouflageManager.setCamouflageEnabled(this, true);
+            Toast.makeText(this, "Camouflage enabled. Launch app from Calculator icon.", Toast.LENGTH_LONG).show();
+        });
 
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}

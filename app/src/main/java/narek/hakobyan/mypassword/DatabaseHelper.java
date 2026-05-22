@@ -134,6 +134,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return s;
     }
 
+
+    public int insertHoneytokenData() {
+        String[][] fake = {
+                {"Swiss National Vault", "ceo@vault-secure.com", "S3cret!Vault2026", "https://vault-secure.com"},
+                {"Offshore Reserve Bank", "director@orb-finance.com", "Ocean#Reserve77", "https://orb-finance.com"},
+                {"BlackCard Concierge", "vip@blackcard.world", "V1P-Concierge$", "https://blackcard.world"},
+                {"Crypto Whale Desk", "ops@whale-trade.io", "WhaleTrade@@1", "https://whale-trade.io"},
+                {"Quantum Payroll", "admin@q-payroll.ai", "Qpay!2026#", "https://q-payroll.ai"},
+                {"Falcon Defense CRM", "agent@falcon-def.net", "Falcon*Secure88", "https://falcon-def.net"},
+                {"Private Jet Club", "owner@jetclub.aero", "JetClub#Sky55", "https://jetclub.aero"},
+                {"Crown Jewels Ledger", "ledger@crown-safe.org", "CrownSafe$2026", "https://crown-safe.org"},
+                {"Platinum Family Office", "office@platinum-fo.com", "PlatinumFO!9", "https://platinum-fo.com"},
+                {"Embassy Secure Mail", "attaché@embassy-mail.gov", "EmbassyMail@X1", "https://embassy-mail.gov"}
+        };
+
+        int inserted = 0;
+        for (String[] row : fake) {
+            long id = insertPassword(row[0], row[1], row[2], row[3], "Honeytoken", "#B06CFF", false);
+            if (id > 0) inserted++;
+        }
+        return inserted;
+    }
     public void deletePassword(int id) { SQLiteDatabase db = getWritableDatabase(); db.delete(TABLE_NAME, COLUMN_ID + "=?", new String[]{String.valueOf(id)}); db.close(); }
 
     private PasswordEntry rowToEntry(Cursor c) {

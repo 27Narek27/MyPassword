@@ -39,6 +39,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".CamouflageCalculatorActivity"
+            android:exported="true" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
@@ -53,7 +57,7 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="Calculator"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".CamouflageCalculatorActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
