@@ -4,9 +4,11 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.http.SslError;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.JavascriptInterface;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -14,13 +16,16 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class Webviewautologinactivity extends AppCompatActivity {
+
     public static final String EXTRA_URL      = "extra_url";
     public static final String EXTRA_LOGIN    = "extra_login";
     public static final String EXTRA_PASSWORD = "extra_password";
+
     private WebView     webView;
     private ProgressBar progressBar;
     private String login;
@@ -45,7 +50,7 @@ public class Webviewautologinactivity extends AppCompatActivity {
         password = getIntent().getStringExtra(EXTRA_PASSWORD);
 
         if (url == null || url.isEmpty()) {
-            Toast.makeText(this, "No URL provided", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "URL не указан", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -87,7 +92,7 @@ public class Webviewautologinactivity extends AppCompatActivity {
         settings.setDomStorageEnabled(true);
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
-
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
         webView.addJavascriptInterface(new AutoFillBridge(), "__AutoFillBridge__");
         webView.setWebViewClient(new AutoLoginWebViewClient());
@@ -161,6 +166,7 @@ public class Webviewautologinactivity extends AppCompatActivity {
     }
 
     private class AutoLoginWebViewClient extends WebViewClient {
+
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             progressBar.setVisibility(View.VISIBLE);
@@ -176,10 +182,19 @@ public class Webviewautologinactivity extends AppCompatActivity {
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             return false;
         }
+
+        /**
+         * Разрешаем SSL-ошибки (устаревший протокол, самоподписанный сертификат).
+         * Это нужно для сайтов с TLS 1.0/1.1 или нестандартными сертификатами.
+         */
+        @Override
+        @SuppressLint("WebViewClientOnReceivedSslError")
+        public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+            handler.proceed();
+        }
     }
+
     private static final class AutoFillBridge {
-
-
         @JavascriptInterface
         public String toString() {
             return "AutoFillBridge";

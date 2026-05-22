@@ -3,20 +3,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#99482A"
+    android:background="#0f0f0f"
     android:fillViewport="true">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="16dp">
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            app:boxStrokeColor="#9CBA7F"
-            app:boxBackgroundColor="#7A3A22"
-            app:hintTextColor="#9CBA7F"
+            app:boxStrokeColor="#2a2a2a"
+            app:boxBackgroundColor="#161616"
+            app:hintTextColor="#4a4a4a"
             app:boxBackgroundMode="outline"
             app:cornerRadius="10dp"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -24,37 +25,41 @@
                 android:id="@+id/etSite"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Title / Site Name"
+                android:hint="Название / сайт"
+                android:textColor="#c8c8c8"
                 android:minHeight="48dp"
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            app:boxStrokeColor="#9CBA7F"
-            app:boxBackgroundColor="#7A3A22"
-            app:hintTextColor="#9CBA7F"
+            app:boxStrokeColor="#2a2a2a"
+            app:boxBackgroundColor="#161616"
+            app:hintTextColor="#4a4a4a"
             app:boxBackgroundMode="outline"
             app:cornerRadius="10dp"
             app:startIconDrawable="@drawable/ic_link"
-            app:startIconTint="#9CBA7F"
+            app:startIconTint="#3a3a3a"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etWebsiteUrl"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Website URL (e.g. https://example.com)"
+                android:hint="URL сайта"
+                android:textColor="#c8c8c8"
                 android:minHeight="48dp"
                 android:inputType="textUri" />
         </com.google.android.material.textfield.TextInputLayout>
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            app:boxStrokeColor="#9CBA7F"
-            app:boxBackgroundColor="#7A3A22"
-            app:hintTextColor="#9CBA7F"
+            app:boxStrokeColor="#2a2a2a"
+            app:boxBackgroundColor="#161616"
+            app:hintTextColor="#4a4a4a"
             app:boxBackgroundMode="outline"
             app:cornerRadius="10dp"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -62,28 +67,31 @@
                 android:id="@+id/etLogin"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Login / Username"
+                android:hint="Логин / имя пользователя"
+                android:textColor="#c8c8c8"
                 android:minHeight="48dp"
                 android:inputType="textEmailAddress" />
         </com.google.android.material.textfield.TextInputLayout>
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:boxStrokeColor="#9CBA7F"
-            app:boxBackgroundColor="#7A3A22"
-            app:hintTextColor="#9CBA7F"
+            android:layout_marginBottom="8dp"
+            app:boxStrokeColor="#2a2a2a"
+            app:boxBackgroundColor="#161616"
+            app:hintTextColor="#4a4a4a"
             app:boxBackgroundMode="outline"
             app:cornerRadius="10dp"
             app:passwordToggleEnabled="true"
-            app:passwordToggleTint="#9CBA7F"
+            app:passwordToggleTint="#4a4a4a"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Password"
+                android:hint="Пароль"
                 android:inputType="textPassword"
+                android:textColor="#c8c8c8"
                 android:minHeight="48dp" />
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>

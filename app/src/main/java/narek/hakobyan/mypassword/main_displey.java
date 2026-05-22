@@ -5,10 +5,13 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,38 +24,45 @@ import java.util.ArrayList;
 public class main_displey extends AppCompatActivity {
 
     RecyclerView listView;
-    ArrayList<DatabaseHelper.PasswordEntry> entries;
-    ArrayList<String> displayList;
+    ArrayList<DatabaseHelper.PasswordEntry> allEntries    = new ArrayList<>();
+    ArrayList<DatabaseHelper.PasswordEntry> filteredEntries = new ArrayList<>();
     PasswordAdapter adapter;
     DatabaseHelper dbHelper;
+    EditText etSearch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_displey);
 
-        Button add = findViewById(R.id.btnAddPassword);
-        listView = findViewById(R.id.listPasswords);
+        Button add   = findViewById(R.id.btnAddPassword);
+        listView     = findViewById(R.id.listPasswords);
+        etSearch     = findViewById(R.id.etSearch);
 
         dbHelper = new DatabaseHelper(this);
-        entries = new ArrayList<>();
-        displayList = new ArrayList<>();
 
-        adapter = new PasswordAdapter(displayList,
+        adapter = new PasswordAdapter(filteredEntries,
                 position -> {
-                    DatabaseHelper.PasswordEntry entry = entries.get(position);
+                    DatabaseHelper.PasswordEntry entry = filteredEntries.get(position);
                     Intent intent = new Intent(main_displey.this, PasswordDetailActivity.class);
                     intent.putExtra("id", entry.id);
                     startActivity(intent);
                 },
-                position -> copyPassword(entries.get(position).password));
+                position -> copyPassword(filteredEntries.get(position).password));
 
         listView.setLayoutManager(new LinearLayoutManager(this));
         listView.setAdapter(adapter);
 
         loadPasswords();
 
-        add.setOnClickListener(v -> startActivity(new Intent(main_displey.this, dialog_password.class)));
+        add.setOnClickListener(v ->
+                startActivity(new Intent(main_displey.this, dialog_password.class)));
+
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) { filterList(s.toString()); }
+            @Override public void afterTextChanged(Editable s) {}
+        });
     }
 
     @Override
@@ -62,11 +72,24 @@ public class main_displey extends AppCompatActivity {
     }
 
     private void loadPasswords() {
-        entries.clear();
-        displayList.clear();
-        entries.addAll(dbHelper.getAllPasswords());
-        for (DatabaseHelper.PasswordEntry e : entries) {
-            displayList.add(e.site + " — " + e.login);
+        allEntries.clear();
+        allEntries.addAll(dbHelper.getAllPasswords());
+        filterList(etSearch != null ? etSearch.getText().toString() : "");
+    }
+
+    private void filterList(String query) {
+        filteredEntries.clear();
+        String q = query.trim().toLowerCase();
+        if (q.isEmpty()) {
+            filteredEntries.addAll(allEntries);
+        } else {
+            for (DatabaseHelper.PasswordEntry e : allEntries) {
+                if (e.site.toLowerCase().contains(q)
+                        || e.login.toLowerCase().contains(q)
+                        || (e.websiteUrl != null && e.websiteUrl.toLowerCase().contains(q))) {
+                    filteredEntries.add(e);
+                }
+            }
         }
         adapter.notifyDataSetChanged();
     }
@@ -74,72 +97,59 @@ public class main_displey extends AppCompatActivity {
     private void copyPassword(String password) {
         ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         if (cm == null) {
-            Toast.makeText(this, "Clipboard unavailable", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Буфер обмена недоступен", Toast.LENGTH_SHORT).show();
             return;
         }
         cm.setPrimaryClip(ClipData.newPlainText("password", password));
-        Toast.makeText(this, "Password copied", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Пароль скопирован", Toast.LENGTH_SHORT).show();
     }
 
-    static class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.PasswordViewHolder> {
+    /* ──────────────────────────────────────────────────────────────────
+       Adapter
+       ────────────────────────────────────────────────────────────────── */
 
-        interface OnItemClickListener {
-            void onItemClick(int position);
-        }
+    static class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.VH> {
 
-        interface OnCopyClickListener {
-            void onCopyClick(int position);
-        }
+        interface OnItemClick  { void onClick(int position); }
+        interface OnCopyClick  { void onCopy(int position);  }
 
-        private final ArrayList<String> items;
-        private final OnItemClickListener listener;
-        private final OnCopyClickListener copyListener;
+        private final ArrayList<DatabaseHelper.PasswordEntry> items;
+        private final OnItemClick  itemListener;
+        private final OnCopyClick  copyListener;
 
-        public PasswordAdapter(ArrayList<String> items, OnItemClickListener listener, OnCopyClickListener copyListener) {
-            this.items = items;
-            this.listener = listener;
+        PasswordAdapter(ArrayList<DatabaseHelper.PasswordEntry> items,
+                        OnItemClick itemListener, OnCopyClick copyListener) {
+            this.items        = items;
+            this.itemListener = itemListener;
             this.copyListener = copyListener;
         }
 
         @Override
-        public PasswordViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext())
+        public VH onCreateViewHolder(ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_password, parent, false);
-            return new PasswordViewHolder(view);
+            return new VH(v);
         }
 
         @Override
-        public void onBindViewHolder(PasswordViewHolder holder, int position) {
-            String text = items.get(position);
-            String[] parts = text.split(" — ", 2);
-
-            holder.tvServiceName.setText(!parts[0].isEmpty() ? parts[0] : "(no site)");
-            holder.tvEmail.setText(parts.length > 1 ? parts[1] : "");
-
-            holder.itemView.setOnClickListener(v -> {
-                if (listener != null) listener.onItemClick(position);
-            });
-
-            holder.btnCopyPassword.setOnClickListener(v -> {
-                if (copyListener != null) copyListener.onCopyClick(position);
-            });
+        public void onBindViewHolder(VH h, int pos) {
+            DatabaseHelper.PasswordEntry e = items.get(pos);
+            h.tvServiceName.setText(!e.site.isEmpty() ? e.site : "(без названия)");
+            h.tvEmail.setText(e.login != null ? e.login : "");
+            h.itemView.setOnClickListener(v -> { if (itemListener != null) itemListener.onClick(pos); });
+            h.btnCopy.setOnClickListener(v -> { if (copyListener != null) copyListener.onCopy(pos); });
         }
 
-        @Override
-        public int getItemCount() {
-            return items.size();
-        }
+        @Override public int getItemCount() { return items.size(); }
 
-        static class PasswordViewHolder extends RecyclerView.ViewHolder {
-            TextView tvServiceName;
-            TextView tvEmail;
-            Button btnCopyPassword;
-
-            public PasswordViewHolder(View itemView) {
-                super(itemView);
-                tvServiceName = itemView.findViewById(R.id.tvServiceName);
-                tvEmail = itemView.findViewById(R.id.tvEmail);
-                btnCopyPassword = itemView.findViewById(R.id.btnCopyPassword);
+        static class VH extends RecyclerView.ViewHolder {
+            TextView tvServiceName, tvEmail;
+            Button btnCopy;
+            VH(View v) {
+                super(v);
+                tvServiceName = v.findViewById(R.id.tvServiceName);
+                tvEmail       = v.findViewById(R.id.tvEmail);
+                btnCopy       = v.findViewById(R.id.btnCopyPassword);
             }
         }
     }
