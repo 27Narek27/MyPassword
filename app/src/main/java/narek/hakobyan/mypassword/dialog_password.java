@@ -2,6 +2,8 @@ package narek.hakobyan.mypassword;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.widget.CheckBox;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +16,7 @@ public class dialog_password extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SecureScreenUtils.apply(this);
         setContentView(R.layout.activity_dialog_password);
 
         TextInputEditText etSite       = findViewById(R.id.etSite);
@@ -22,9 +25,21 @@ public class dialog_password extends AppCompatActivity {
         TextInputEditText etPassword   = findViewById(R.id.etPassword);
         MaterialButton    btnGenerate  = findViewById(R.id.btnGeneratePassword);
         MaterialButton    btnSave      = findViewById(R.id.btnSave);
+        TextInputEditText etCategory   = findViewById(R.id.etCategory);
+        CheckBox cbFavorite = findViewById(R.id.cbFavorite);
+        TextView tvStrength = findViewById(R.id.tvStrength);
 
         btnGenerate.setOnClickListener(v ->
                 etPassword.setText(PasswordSecurityUtils.generateStrongPassword(20)));
+
+        etPassword.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
+                int score = PasswordSecurityUtils.calculateStrengthScore(String.valueOf(s));
+                tvStrength.setText("Надёжность: " + score + "%");
+            }
+            @Override public void afterTextChanged(android.text.Editable s) {}
+        });
 
         btnSave.setOnClickListener(v -> {
             String site       = text(etSite);
@@ -50,7 +65,7 @@ public class dialog_password extends AppCompatActivity {
             }
             try {
                 DatabaseHelper db = new DatabaseHelper(this);
-                db.insertPassword(site, login, password, websiteUrl);
+                db.insertPassword(site, login, password, websiteUrl, text(etCategory).isEmpty()?"Общее":text(etCategory), "#6B9E5A", cbFavorite.isChecked());
             } catch (IllegalArgumentException e) {
                 Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                 return;
