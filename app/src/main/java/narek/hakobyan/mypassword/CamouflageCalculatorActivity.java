@@ -25,16 +25,59 @@ public class CamouflageCalculatorActivity extends AppCompatActivity {
             b.setOnClickListener(v -> append(((Button) v).getText().toString()));
         }
 
+        int[] opIds = {R.id.btnPlus, R.id.btnMinus, R.id.btnMul, R.id.btnDiv};
+        for (int id : opIds) {
+            Button b = findViewById(id);
+            b.setOnClickListener(v -> append(((Button) v).getText().toString()));
+        }
+
         findViewById(R.id.btnClear).setOnClickListener(v -> { input.setLength(0); tvDisplay.setText("0"); });
-        findViewById(R.id.btnEq).setOnClickListener(v -> tvDisplay.setText(input.length() == 0 ? "0" : input.toString()));
+        findViewById(R.id.btnEq).setOnClickListener(v -> evaluate());
     }
 
-    private void append(String n) {
-        input.append(n);
+    private void append(String token) {
+        input.append(token);
         tvDisplay.setText(input.toString());
-        if (input.toString().endsWith("9870")) {
+    }
+
+    private void evaluate() {
+        String expr = input.toString().replace("×", "*").replace("÷", "/").replace(" ", "");
+        if ("27+27".equals(expr)) {
             startActivity(new Intent(this, MainActivity.class));
             finish();
+            return;
         }
+        try {
+            double value = simpleEval(expr);
+            String out = (value == (long) value) ? String.valueOf((long) value) : String.valueOf(value);
+            tvDisplay.setText(out);
+            input.setLength(0);
+            input.append(out);
+        } catch (Exception e) {
+            tvDisplay.setText("Error");
+            input.setLength(0);
+        }
+    }
+
+    private double simpleEval(String expr) {
+        if (expr.isEmpty()) throw new IllegalArgumentException("empty");
+        double current;
+        int i = 0;
+        int n = expr.length();
+        StringBuilder num = new StringBuilder();
+        while (i < n && (Character.isDigit(expr.charAt(i)) || expr.charAt(i) == '.')) num.append(expr.charAt(i++));
+        current = Double.parseDouble(num.toString());
+        while (i < n) {
+            char op = expr.charAt(i++);
+            num.setLength(0);
+            while (i < n && (Character.isDigit(expr.charAt(i)) || expr.charAt(i) == '.')) num.append(expr.charAt(i++));
+            double right = Double.parseDouble(num.toString());
+            if (op == '+') current += right;
+            else if (op == '-') current -= right;
+            else if (op == '*') current *= right;
+            else if (op == '/') current /= right;
+            else throw new IllegalArgumentException("bad op");
+        }
+        return current;
     }
 }
