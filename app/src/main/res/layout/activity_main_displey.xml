@@ -86,16 +86,6 @@
         app:backgroundTint="#2f4f6f" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnToggleCamouflage"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp"
-        android:text="Режим маскировки"
-        app:backgroundTint="#555555" />
-
-    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAddPassword"
         android:layout_width="match_parent"
         android:layout_height="52dp"

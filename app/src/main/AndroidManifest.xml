@@ -39,10 +39,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".CamouflageCalculatorActivity"
-            android:exported="true" />
-
-        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
