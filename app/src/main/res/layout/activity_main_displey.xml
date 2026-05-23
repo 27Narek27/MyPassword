@@ -77,6 +77,15 @@
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnHealthDashboard"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="Проверка паролей"
+        app:backgroundTint="#2f4f6f" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAddPassword"
         android:layout_width="match_parent"
         android:layout_height="52dp"

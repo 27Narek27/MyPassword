@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MyPassWord</string>
+    <string name="app_name">Мои пароли</string>
     <string name="open_app">Открыть</string>
     <string name="about_us">О приложении</string>
     <string name="enter_master_password_title">Введите мастер-пароль</string>
