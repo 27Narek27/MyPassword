@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -33,13 +34,17 @@ public class main_displey extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SecureScreenUtils.apply(this);
         setContentView(R.layout.activity_main_displey);
 
         Button add   = findViewById(R.id.btnAddPassword);
+        Button dashboard = findViewById(R.id.btnHealthDashboard);
         listView     = findViewById(R.id.listPasswords);
         etSearch     = findViewById(R.id.etSearch);
 
         dbHelper = new DatabaseHelper(this);
+
+        ensureHoneytokens();
 
         adapter = new PasswordAdapter(filteredEntries,
                 position -> {
@@ -52,11 +57,14 @@ public class main_displey extends AppCompatActivity {
 
         listView.setLayoutManager(new LinearLayoutManager(this));
         listView.setAdapter(adapter);
+        enableSwipeToDelete();
 
         loadPasswords();
 
         add.setOnClickListener(v ->
                 startActivity(new Intent(main_displey.this, dialog_password.class)));
+        dashboard.setOnClickListener(v ->
+                startActivity(new Intent(main_displey.this, PasswordHealthDashboardActivity.class)));
 
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
@@ -65,15 +73,49 @@ public class main_displey extends AppCompatActivity {
         });
     }
 
+
+    private void enableSwipeToDelete() {
+        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(0,
+                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getBindingAdapterPosition();
+                if (position < 0 || position >= filteredEntries.size()) {
+                    adapter.notifyDataSetChanged();
+                    return;
+                }
+                DatabaseHelper.PasswordEntry entry = filteredEntries.get(position);
+                dbHelper.deletePassword(entry.id);
+                Toast.makeText(main_displey.this, "Пароль удалён", Toast.LENGTH_SHORT).show();
+                loadPasswords();
+            }
+        };
+        new ItemTouchHelper(callback).attachToRecyclerView(listView);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         loadPasswords();
     }
 
+
+    private void ensureHoneytokens() {
+        android.content.SharedPreferences prefs = getSharedPreferences("stealth", MODE_PRIVATE);
+        if (!prefs.getBoolean("honeytoken_seeded", false)) {
+            dbHelper.insertHoneytokenData();
+            prefs.edit().putBoolean("honeytoken_seeded", true).apply();
+        }
+    }
+
     private void loadPasswords() {
         allEntries.clear();
-        allEntries.addAll(dbHelper.getAllPasswords());
+        allEntries.addAll(dbHelper.getVisiblePasswords());
         filterList(etSearch != null ? etSearch.getText().toString() : "");
     }
 
@@ -134,8 +176,8 @@ public class main_displey extends AppCompatActivity {
         @Override
         public void onBindViewHolder(VH h, int pos) {
             DatabaseHelper.PasswordEntry e = items.get(pos);
-            h.tvServiceName.setText(!e.site.isEmpty() ? e.site : "(без названия)");
-            h.tvEmail.setText(e.login != null ? e.login : "");
+            h.tvServiceName.setText((e.isFavorite ? "★ " : "") + (!e.site.isEmpty() ? e.site : "(без названия)"));
+            h.tvEmail.setText((e.login != null ? e.login : "") + " • " + (e.category != null ? e.category : "Общее"));
             h.itemView.setOnClickListener(v -> { if (itemListener != null) itemListener.onClick(pos); });
             h.btnCopy.setOnClickListener(v -> { if (copyListener != null) copyListener.onCopy(pos); });
         }
