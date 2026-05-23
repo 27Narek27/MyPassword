@@ -47,7 +47,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
     private void loadEntry() {
         entry = dbHelper.getPasswordById(entryId);
         if (entry == null) {
-            Toast.makeText(this, "Entry not found", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Запись не найдена", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -56,7 +56,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
         tvLogin.setText(entry.login);
         tvPassword.setText("••••••••");
         passwordVisible = false;
-        btnShowPassword.setText("Show Password");
+        btnShowPassword.setText("Показать пароль");
 
         boolean hasUrl = !TextUtils.isEmpty(entry.websiteUrl);
         if (hasUrl) {
@@ -80,11 +80,11 @@ public class PasswordDetailActivity extends AppCompatActivity {
         btnShowPassword.setOnClickListener(v -> {
             passwordVisible = !passwordVisible;
             tvPassword.setText(passwordVisible ? entry.password : "••••••••");
-            btnShowPassword.setText(passwordVisible ? "Hide Password" : "Show Password");
+            btnShowPassword.setText(passwordVisible ? "Скрыть пароль" : "Показать пароль");
         });
         btnAutoLogin.setOnClickListener(v -> {
             if (TextUtils.isEmpty(entry.websiteUrl)) {
-                Toast.makeText(this, "No URL saved for this entry",
+                Toast.makeText(this, "Для этой записи не сохранён URL",
                         Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -95,14 +95,14 @@ public class PasswordDetailActivity extends AppCompatActivity {
         btnEdit.setOnClickListener(v -> showEditDialog());
         btnDelete.setOnClickListener(v ->
                 new AlertDialog.Builder(this)
-                        .setTitle("Delete entry")
-                        .setMessage("Delete the entry for \"" + entry.site + "\"?")
-                        .setPositiveButton("Delete", (dialog, which) -> {
+                        .setTitle("Удалить запись")
+                        .setMessage("Удалить запись для \"" + entry.site + "\"?")
+                        .setPositiveButton("Удалить", (dialog, which) -> {
                             dbHelper.deletePassword(entryId);
-                            Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Удалено", Toast.LENGTH_SHORT).show();
                             finish();
                         })
-                        .setNegativeButton("Cancel", null)
+                        .setNegativeButton("Отмена", null)
                         .show());
     }
 
@@ -119,10 +119,10 @@ public class PasswordDetailActivity extends AppCompatActivity {
         etPass.setText(entry.password);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Edit entry")
+                .setTitle("Редактировать запись")
                 .setView(redactor)
-                .setPositiveButton("Save",   null)
-                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Сохранить",   null)
+                .setNegativeButton("Отмена", null)
                 .create();
 
         dialog.setOnShowListener(d ->
@@ -134,12 +134,12 @@ public class PasswordDetailActivity extends AppCompatActivity {
                     String newPass  = etPass.getText().toString();
 
                     if (TextUtils.isEmpty(newSite)) {
-                        etSite.setError("Enter a title or site name");
+                        etSite.setError("Введите название или сайт");
                         etSite.requestFocus();
                         return;
                     }
                     if (TextUtils.isEmpty(newLogin)) {
-                        etLogin.setError("Enter a login / username");
+                        etLogin.setError("Введите логин / имя пользователя");
                         etLogin.requestFocus();
                         return;
                     }
@@ -154,7 +154,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
                         Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                         return;
                     }
-                    Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Сохранено", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
                     loadEntry();
                 }));

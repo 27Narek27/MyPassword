@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -57,6 +58,7 @@ public class main_displey extends AppCompatActivity {
 
         listView.setLayoutManager(new LinearLayoutManager(this));
         listView.setAdapter(adapter);
+        enableSwipeToDelete();
 
         loadPasswords();
 
@@ -66,7 +68,7 @@ public class main_displey extends AppCompatActivity {
                 startActivity(new Intent(main_displey.this, PasswordHealthDashboardActivity.class)));
         camouflage.setOnClickListener(v -> {
             CamouflageManager.setCamouflageEnabled(this, true);
-            Toast.makeText(this, "Camouflage enabled. Launch app from Calculator icon.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Режим маскировки включён. Откройте приложение через иконку калькулятора.", Toast.LENGTH_LONG).show();
         });
 
         etSearch.addTextChangedListener(new TextWatcher() {
@@ -74,6 +76,31 @@ public class main_displey extends AppCompatActivity {
             @Override public void onTextChanged(CharSequence s, int st, int b, int c) { filterList(s.toString()); }
             @Override public void afterTextChanged(Editable s) {}
         });
+    }
+
+
+    private void enableSwipeToDelete() {
+        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(0,
+                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getBindingAdapterPosition();
+                if (position < 0 || position >= filteredEntries.size()) {
+                    adapter.notifyDataSetChanged();
+                    return;
+                }
+                DatabaseHelper.PasswordEntry entry = filteredEntries.get(position);
+                dbHelper.deletePassword(entry.id);
+                Toast.makeText(main_displey.this, "Пароль удалён", Toast.LENGTH_SHORT).show();
+                loadPasswords();
+            }
+        };
+        new ItemTouchHelper(callback).attachToRecyclerView(listView);
     }
 
     @Override
@@ -93,7 +120,7 @@ public class main_displey extends AppCompatActivity {
 
     private void loadPasswords() {
         allEntries.clear();
-        allEntries.addAll(dbHelper.getAllPasswords());
+        allEntries.addAll(dbHelper.getVisiblePasswords());
         filterList(etSearch != null ? etSearch.getText().toString() : "");
     }
 

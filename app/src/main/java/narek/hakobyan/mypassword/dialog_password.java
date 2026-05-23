@@ -48,13 +48,13 @@ public class dialog_password extends AppCompatActivity {
             String password   = etPassword.getText() != null
                     ? etPassword.getText().toString() : "";
             if (TextUtils.isEmpty(site)) {
-                etSite.setError("Enter a title or site name");
+                etSite.setError("Введите название или сайт");
                 etSite.requestFocus();
                 return;
             }
 
             if (TextUtils.isEmpty(login)) {
-                etLogin.setError("Enter a login / username");
+                etLogin.setError("Введите логин / имя пользователя");
                 etLogin.requestFocus();
                 return;
             }

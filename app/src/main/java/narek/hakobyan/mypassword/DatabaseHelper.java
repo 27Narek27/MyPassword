@@ -95,6 +95,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (c.moveToFirst()) do list.add(rowToEntry(c)); while (c.moveToNext()); c.close(); db.close(); return list;
     }
 
+
+    public ArrayList<PasswordEntry> getVisiblePasswords() {
+        ArrayList<PasswordEntry> out = new ArrayList<>();
+        for (PasswordEntry e : getAllPasswords()) {
+            if (!"Honeytoken".equalsIgnoreCase(e.category)) out.add(e);
+        }
+        return out;
+    }
+
     public PasswordEntry getPasswordById(int id) {
         SQLiteDatabase db = getReadableDatabase(); Cursor c = db.query(TABLE_NAME, null, COLUMN_ID + "=?", new String[]{String.valueOf(id)}, null, null, null);
         PasswordEntry e = null; if (c.moveToFirst()) e = rowToEntry(c); c.close(); db.close(); return e;
