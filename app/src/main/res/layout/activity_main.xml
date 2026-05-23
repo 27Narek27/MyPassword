@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
         android:letterSpacing="-0.02"
-        android:text="Мои пароли"
+        android:text="MyPassword"
         android:textColor="#c8c8c8"
         android:textSize="34sp"
         android:textStyle="bold"
