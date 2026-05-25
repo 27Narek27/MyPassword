@@ -77,6 +77,38 @@ public class CryptoManager {
         }
     }
 
+    public byte[] encryptBytes(byte[] plainBytes) {
+        if (plainBytes == null || plainBytes.length == 0) return plainBytes;
+        try {
+            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateSecretKey());
+            byte[] iv = cipher.getIV();
+            byte[] cipherBytes = cipher.doFinal(plainBytes);
+            ByteBuffer byteBuffer = ByteBuffer.allocate(iv.length + cipherBytes.length);
+            byteBuffer.put(iv);
+            byteBuffer.put(cipherBytes);
+            return byteBuffer.array();
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Failed to encrypt media bytes", e);
+        }
+    }
+
+    public byte[] decryptBytes(byte[] storedBytes) {
+        if (storedBytes == null || storedBytes.length <= IV_SIZE_BYTES) return storedBytes;
+        try {
+            ByteBuffer byteBuffer = ByteBuffer.wrap(storedBytes);
+            byte[] iv = new byte[IV_SIZE_BYTES];
+            byteBuffer.get(iv);
+            byte[] cipherBytes = new byte[byteBuffer.remaining()];
+            byteBuffer.get(cipherBytes);
+            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            cipher.init(Cipher.DECRYPT_MODE, getOrCreateSecretKey(), new GCMParameterSpec(TAG_LENGTH_BITS, iv));
+            return cipher.doFinal(cipherBytes);
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Failed to decrypt media bytes", e);
+        }
+    }
+
     private SecretKey getOrCreateSecretKey() throws GeneralSecurityException {
         KeyStore keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER);
         try {
