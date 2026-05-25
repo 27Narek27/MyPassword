@@ -4,6 +4,8 @@ import android.net.Uri;
 import android.text.TextUtils;
 import android.webkit.URLUtil;
 
+import org.json.JSONObject;
+
 import java.util.Locale;
 
 public class PhishingProtectionManager {
@@ -18,7 +20,7 @@ public class PhishingProtectionManager {
         }
     }
 
-    public Verdict verifyAutofillSafety(String currentUrl, String savedUrl, String pageHtml) {
+    public Verdict verifyAutofillSafety(String currentUrl, String savedUrl, String domSignalsJson) {
         if (!URLUtil.isHttpsUrl(currentUrl)) return new Verdict(false, "Autofill blocked: non-HTTPS page");
         if (TextUtils.isEmpty(savedUrl)) return new Verdict(false, "Autofill blocked: no trusted URL in vault");
 
@@ -30,12 +32,49 @@ public class PhishingProtectionManager {
             return new Verdict(false, "Autofill blocked: domain mismatch");
         }
 
-        String lowHtml = pageHtml == null ? "" : pageHtml.toLowerCase(Locale.ROOT);
-        if (lowHtml.contains("password") && (lowHtml.contains("display:none") || lowHtml.contains("opacity:0"))) {
-            return new Verdict(false, "Autofill blocked: hidden password fields detected");
+        DomSignals s = parseSignals(domSignalsJson);
+        if (s.hasHiddenPasswordField) {
+            return new Verdict(false, "Autofill blocked: hidden password field detected");
+        }
+        if (s.passwordFieldCount == 0) {
+            return new Verdict(false, "Autofill blocked: no password field on page");
+        }
+        if (s.hasIframePasswordField) {
+            return new Verdict(false, "Autofill blocked: password field in iframe");
+        }
+        if (s.hasSuspiciousKeywords) {
+            return new Verdict(false, "Autofill blocked: suspicious phishing keywords found");
+        }
+        if (s.formActionHost != null && !sameRegistrableDomain(s.formActionHost, savedHost)) {
+            return new Verdict(false, "Autofill blocked: form action domain mismatch");
         }
 
         return new Verdict(true, "Autofill allowed");
+    }
+
+    private DomSignals parseSignals(String json) {
+        DomSignals out = new DomSignals();
+        try {
+            if (json == null || json.isEmpty()) return out;
+            JSONObject o = new JSONObject(json);
+            out.hasHiddenPasswordField = o.optBoolean("hasHiddenPasswordField", false);
+            out.passwordFieldCount = o.optInt("passwordFieldCount", 0);
+            out.hasIframePasswordField = o.optBoolean("hasIframePasswordField", false);
+            out.hasSuspiciousKeywords = o.optBoolean("hasSuspiciousKeywords", false);
+            String host = o.optString("formActionHost", "").toLowerCase(Locale.ROOT).trim();
+            out.formActionHost = host.isEmpty() ? null : host;
+        } catch (Exception ignore) {
+            // Invalid JSON -> keep defaults and let upper checks block missing password fields.
+        }
+        return out;
+    }
+
+    private static class DomSignals {
+        boolean hasHiddenPasswordField;
+        int passwordFieldCount;
+        boolean hasIframePasswordField;
+        boolean hasSuspiciousKeywords;
+        String formActionHost;
     }
 
     private String host(String url) {
