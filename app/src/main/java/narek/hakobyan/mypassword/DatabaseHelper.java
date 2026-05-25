@@ -10,7 +10,7 @@ import java.util.ArrayList;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "passwords.db";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
 
     public static final String TABLE_NAME = "passwords";
     public static final String COLUMN_ID = "id";
@@ -51,9 +51,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             + "token_hash TEXT NOT NULL UNIQUE, "
             + "password_id INTEGER NOT NULL, "
             + "encrypted_payload TEXT NOT NULL, "
+            + "created_at INTEGER NOT NULL, "
             + "expires_at INTEGER NOT NULL, "
-            + "views_left INTEGER NOT NULL DEFAULT 1, "
-            + "is_revoked INTEGER NOT NULL DEFAULT 0"
+            + "max_views INTEGER NOT NULL DEFAULT 1"
             + ");";
 
     private static final String CREATE_MEDIA_VAULT = "CREATE TABLE " + TABLE_MEDIA_VAULT + " ("
@@ -83,6 +83,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         public int stalePasswords;
     }
 
+    public static class PasswordVersion {
+        public int historyId;
+        public String password;
+        public long changedAt;
+    }
+
     private final CryptoManager cryptoManager;
 
     public DatabaseHelper(Context context) { super(context, DATABASE_NAME, null, DATABASE_VERSION); cryptoManager = new CryptoManager(); }
@@ -105,6 +111,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 4) {
             db.execSQL(CREATE_SECURE_SHARES);
             db.execSQL(CREATE_MEDIA_VAULT);
+        }
+        if (oldVersion < 5) {
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_SECURE_SHARES);
+            db.execSQL(CREATE_SECURE_SHARES);
         }
     }
 
@@ -157,6 +167,52 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor c = db.query(TABLE_HISTORY, new String[]{"old_password","changed_at"}, "password_id=?", new String[]{String.valueOf(id)}, null, null, "changed_at DESC");
         if (c.moveToFirst()) do { out.add(cryptoManager.decrypt(c.getString(0)) + " • " + new java.util.Date(c.getLong(1))); } while (c.moveToNext());
         c.close(); db.close(); return out;
+    }
+
+    public ArrayList<PasswordVersion> getPasswordVersions(int passwordId) {
+        ArrayList<PasswordVersion> out = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.query(TABLE_HISTORY, new String[]{"id", "old_password", "changed_at"}, "password_id=?", new String[]{String.valueOf(passwordId)}, null, null, "changed_at DESC");
+        while (c.moveToNext()) {
+            PasswordVersion version = new PasswordVersion();
+            version.historyId = c.getInt(0);
+            version.password = cryptoManager.decrypt(c.getString(1));
+            version.changedAt = c.getLong(2);
+            out.add(version);
+        }
+        c.close();
+        db.close();
+        return out;
+    }
+
+    public String rollbackToVersion(int passwordId, int historyId) {
+        SQLiteDatabase db = getWritableDatabase();
+        Cursor c = db.query(TABLE_HISTORY, new String[]{"old_password"}, "id=? AND password_id=?", new String[]{String.valueOf(historyId), String.valueOf(passwordId)}, null, null, null, "1");
+        if (!c.moveToFirst()) {
+            c.close();
+            db.close();
+            return null;
+        }
+
+        String rollbackPassword = cryptoManager.decrypt(c.getString(0));
+        c.close();
+
+        PasswordEntry current = getPasswordById(passwordId);
+        if (current != null && !rollbackPassword.equals(current.password)) {
+            ContentValues backupCurrent = new ContentValues();
+            backupCurrent.put("password_id", passwordId);
+            backupCurrent.put("old_password", cryptoManager.encrypt(current.password));
+            backupCurrent.put("changed_at", System.currentTimeMillis());
+            db.insert(TABLE_HISTORY, null, backupCurrent);
+        }
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PASSWORD, cryptoManager.encrypt(rollbackPassword));
+        values.put(COLUMN_LAST_CHANGED_AT, System.currentTimeMillis());
+        db.update(TABLE_NAME, values, COLUMN_ID + "=?", new String[]{String.valueOf(passwordId)});
+        db.delete(TABLE_HISTORY, "id=?", new String[]{String.valueOf(historyId)});
+        db.close();
+        return rollbackPassword;
     }
 
     public String rollbackToPreviousPassword(int passwordId) {

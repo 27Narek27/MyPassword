@@ -1,8 +1,5 @@
 package narek.hakobyan.mypassword;
 
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -23,6 +20,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 
 public class main_displey extends AppCompatActivity {
+
+    private static final long CLIPBOARD_CLEAR_DELAY_MS = 15_000L;
 
     RecyclerView listView;
     ArrayList<DatabaseHelper.PasswordEntry> allEntries    = new ArrayList<>();
@@ -137,13 +136,13 @@ public class main_displey extends AppCompatActivity {
     }
 
     private void copyPassword(String password) {
-        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        if (cm == null) {
-            Toast.makeText(this, "Буфер обмена недоступен", Toast.LENGTH_SHORT).show();
-            return;
+        try {
+            ClipboardAutoClearManager clipboardAutoClearManager = new ClipboardAutoClearManager(this);
+            clipboardAutoClearManager.copySecretWithAutoClear("password", password, CLIPBOARD_CLEAR_DELAY_MS);
+            Toast.makeText(this, "Пароль скопирован (буфер очистится через 15 секунд)", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Не удалось скопировать пароль", Toast.LENGTH_SHORT).show();
         }
-        cm.setPrimaryClip(ClipData.newPlainText("password", password));
-        Toast.makeText(this, "Пароль скопирован", Toast.LENGTH_SHORT).show();
     }
 
     /* ──────────────────────────────────────────────────────────────────

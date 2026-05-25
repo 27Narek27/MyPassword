@@ -7,7 +7,6 @@ import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.os.Bundle;
 import android.view.View;
-import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -30,6 +29,8 @@ public class Webviewautologinactivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private String login;
     private String password;
+    private String trustedUrl;
+    private final PhishingProtectionManager phishingProtectionManager = new PhishingProtectionManager();
 
     public static void launch(Context context, String url, String login, String password) {
         Intent intent = new Intent(context, Webviewautologinactivity.class);
@@ -46,6 +47,7 @@ public class Webviewautologinactivity extends AppCompatActivity {
         setContentView(R.layout.activity_webview_autologin);
 
         String url = getIntent().getStringExtra(EXTRA_URL);
+        trustedUrl = url;
         login    = getIntent().getStringExtra(EXTRA_LOGIN);
         password = getIntent().getStringExtra(EXTRA_PASSWORD);
 
@@ -94,7 +96,6 @@ public class Webviewautologinactivity extends AppCompatActivity {
         settings.setUseWideViewPort(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
-        webView.addJavascriptInterface(new AutoFillBridge(), "__AutoFillBridge__");
         webView.setWebViewClient(new AutoLoginWebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -147,6 +148,41 @@ public class Webviewautologinactivity extends AppCompatActivity {
         webView.evaluateJavascript(js, result -> {});
     }
 
+    private void verifyAndAutofill(String currentUrl) {
+        String domProbeJs = "(function(){"
+                + "var forms=document.forms||[];"
+                + "var p=document.querySelectorAll('input[type=\\\"password\\\"]');"
+                + "var hidden=false;"
+                + "for(var i=0;i<p.length;i++){var s=getComputedStyle(p[i]);if(s.display==='none'||s.visibility==='hidden'||s.opacity==='0'||p[i].offsetParent===null){hidden=true;break;}}"
+                + "var ifr=false;try{ifr=window.top!==window.self;}catch(e){ifr=true;}"
+                + "var t=(document.body&&document.body.innerText?document.body.innerText:'').toLowerCase();"
+                + "var suspicious=/verify.{0,20}account|urgent|suspend|confirm.{0,20}password|wallet|seed phrase/.test(t);"
+                + "var actionHost='';"
+                + "if(forms.length>0&&forms[0].action){try{actionHost=(new URL(forms[0].action,location.href)).host.toLowerCase();}catch(e){actionHost='';}}"
+                + "return JSON.stringify({passwordFieldCount:p.length,hasHiddenPasswordField:hidden,hasIframePasswordField:ifr,hasSuspiciousKeywords:suspicious,formActionHost:actionHost});"
+                + "})();";
+
+        webView.evaluateJavascript(domProbeJs, raw -> {
+            String domSignals = unquoteJsResult(raw);
+            PhishingProtectionManager.Verdict verdict = phishingProtectionManager
+                    .verifyAutofillSafety(currentUrl, trustedUrl, domSignals);
+            if (!verdict.allowAutofill) {
+                Toast.makeText(this, verdict.reason, Toast.LENGTH_LONG).show();
+                return;
+            }
+            injectAutoFillScript();
+        });
+    }
+
+    private String unquoteJsResult(String raw) {
+        if (raw == null) return "";
+        String value = raw;
+        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+            value = value.substring(1, value.length() - 1);
+        }
+        return value.replace("\\\\", "\\").replace("\\\"", "\"");
+    }
+
     private static String escapeForJs(String raw) {
         return raw
                 .replace("\\", "\\\\")
@@ -175,7 +211,7 @@ public class Webviewautologinactivity extends AppCompatActivity {
         @Override
         public void onPageFinished(WebView view, String url) {
             progressBar.setVisibility(View.GONE);
-            injectAutoFillScript();
+            verifyAndAutofill(url);
         }
 
         @Override
@@ -183,21 +219,11 @@ public class Webviewautologinactivity extends AppCompatActivity {
             return false;
         }
 
-        /**
-         * Разрешаем SSL-ошибки (устаревший протокол, самоподписанный сертификат).
-         * Это нужно для сайтов с TLS 1.0/1.1 или нестандартными сертификатами.
-         */
         @Override
-        @SuppressLint("WebViewClientOnReceivedSslError")
         public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-            handler.proceed();
-        }
-    }
-
-    private static final class AutoFillBridge {
-        @JavascriptInterface
-        public String toString() {
-            return "AutoFillBridge";
+            handler.cancel();
+            Toast.makeText(Webviewautologinactivity.this,
+                    "Autofill blocked: SSL certificate error", Toast.LENGTH_LONG).show();
         }
     }
 }
