@@ -19,7 +19,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
     DatabaseHelper.PasswordEntry entry;
 
     TextView       tvSite, tvLogin, tvPassword, tvWebsiteUrl;
-    MaterialButton btnShowPassword, btnEdit, btnDelete, btnAutoLogin;
+    MaterialButton btnShowPassword, btnEdit, btnDelete, btnAutoLogin, btnAutoChangePassword;
 
     boolean passwordVisible = false;
 
@@ -40,6 +40,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
         btnEdit        = findViewById(R.id.btnEdit);
         btnDelete      = findViewById(R.id.btnDelete);
         btnAutoLogin   = findViewById(R.id.btnAutoLogin);   // NEW
+        btnAutoChangePassword = findViewById(R.id.btnAutoChangePassword);
 
         loadEntry();
         bindButtons();
@@ -69,10 +70,12 @@ public class PasswordDetailActivity extends AppCompatActivity {
                     Webviewautologinactivity.launch(
                             this, entry.websiteUrl, entry.login, entry.password));
             btnAutoLogin.setVisibility(View.VISIBLE);
+            btnAutoChangePassword.setVisibility(View.VISIBLE);
         } else {
             tvWebsiteUrl.setText("—");
             tvWebsiteUrl.setOnClickListener(null);
             btnAutoLogin.setVisibility(View.GONE);
+            btnAutoChangePassword.setVisibility(View.GONE);
         }
     }
 
@@ -91,6 +94,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
             Webviewautologinactivity.launch(
                     this, entry.websiteUrl, entry.login, entry.password);
         });
+        btnAutoChangePassword.setOnClickListener(v -> runAutoPasswordChange());
 
         btnEdit.setOnClickListener(v -> showEditDialog());
         btnDelete.setOnClickListener(v ->
@@ -104,6 +108,45 @@ public class PasswordDetailActivity extends AppCompatActivity {
                         })
                         .setNegativeButton("Отмена", null)
                         .show());
+    }
+
+    private void runAutoPasswordChange() {
+        if (entry == null || TextUtils.isEmpty(entry.websiteUrl)) {
+            Toast.makeText(this, "Нужен URL для автоматической смены пароля", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnAutoChangePassword.setEnabled(false);
+        btnAutoChangePassword.setText("Смена пароля...");
+
+        new Thread(() -> {
+            try {
+                AutoPasswordChangeManager manager = new AutoPasswordChangeManager(dbHelper);
+                String newPassword = manager.rotatePassword(entry.id, this::changePasswordOnRemoteSite);
+                runOnUiThread(() -> {
+                    btnAutoChangePassword.setEnabled(true);
+                    btnAutoChangePassword.setText("Автоматически сменить пароль");
+                    Toast.makeText(this, "Пароль обновлён автоматически", Toast.LENGTH_LONG).show();
+                    loadEntry();
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    btnAutoChangePassword.setEnabled(true);
+                    btnAutoChangePassword.setText("Автоматически сменить пароль");
+                    Toast.makeText(this, "Не удалось сменить пароль: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
+    }
+
+    private boolean changePasswordOnRemoteSite(String websiteUrl, String login, String oldPassword, String newPassword) {
+        // Точка интеграции №1: вызов вашего backend-API (рекомендуется)
+        // POST /password-rotation { url, login, oldPassword, newPassword }
+        // return true, если сторонний сайт принял смену.
+
+        // Точка интеграции №2: fallback через WebView-сценарий/автоматизацию формы.
+        // Здесь intentionally оставлен stub; замените на рабочую интеграцию под ваши цели.
+        return false;
     }
 
     private void showEditDialog() {
