@@ -10,7 +10,7 @@ import java.util.ArrayList;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "passwords.db";
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
 
     public static final String TABLE_NAME = "passwords";
     public static final String COLUMN_ID = "id";
@@ -24,6 +24,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_LAST_CHANGED_AT = "last_changed_at";
 
     public static final String TABLE_HISTORY = "password_history";
+    public static final String TABLE_SECURE_SHARES = "secure_shares";
+    public static final String TABLE_MEDIA_VAULT = "media_vault";
 
     private static final String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME + " ("
             + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -42,6 +44,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             + "password_id INTEGER NOT NULL, "
             + "old_password TEXT NOT NULL, "
             + "changed_at INTEGER NOT NULL"
+            + ");";
+
+    private static final String CREATE_SECURE_SHARES = "CREATE TABLE " + TABLE_SECURE_SHARES + " ("
+            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            + "token_hash TEXT NOT NULL UNIQUE, "
+            + "password_id INTEGER NOT NULL, "
+            + "encrypted_payload TEXT NOT NULL, "
+            + "expires_at INTEGER NOT NULL, "
+            + "views_left INTEGER NOT NULL DEFAULT 1, "
+            + "is_revoked INTEGER NOT NULL DEFAULT 0"
+            + ");";
+
+    private static final String CREATE_MEDIA_VAULT = "CREATE TABLE " + TABLE_MEDIA_VAULT + " ("
+            + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            + "password_id INTEGER, "
+            + "encrypted_blob BLOB NOT NULL, "
+            + "encrypted_ocr_index TEXT, "
+            + "mime_type TEXT, "
+            + "created_at INTEGER NOT NULL"
             + ");";
 
     public static class PasswordEntry {
@@ -65,7 +86,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private final CryptoManager cryptoManager;
 
     public DatabaseHelper(Context context) { super(context, DATABASE_NAME, null, DATABASE_VERSION); cryptoManager = new CryptoManager(); }
-    @Override public void onCreate(SQLiteDatabase db) { db.execSQL(CREATE_TABLE); db.execSQL(CREATE_HISTORY); }
+    @Override public void onCreate(SQLiteDatabase db) {
+        db.execSQL(CREATE_TABLE);
+        db.execSQL(CREATE_HISTORY);
+        db.execSQL(CREATE_SECURE_SHARES);
+        db.execSQL(CREATE_MEDIA_VAULT);
+    }
 
     @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (oldVersion < 2) db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + COLUMN_WEBSITE_URL + " TEXT");
@@ -75,6 +101,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + COLUMN_IS_FAVORITE + " INTEGER DEFAULT 0");
             db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + COLUMN_LAST_CHANGED_AT + " INTEGER DEFAULT 0");
             db.execSQL(CREATE_HISTORY);
+        }
+        if (oldVersion < 4) {
+            db.execSQL(CREATE_SECURE_SHARES);
+            db.execSQL(CREATE_MEDIA_VAULT);
         }
     }
 
@@ -127,6 +157,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor c = db.query(TABLE_HISTORY, new String[]{"old_password","changed_at"}, "password_id=?", new String[]{String.valueOf(id)}, null, null, "changed_at DESC");
         if (c.moveToFirst()) do { out.add(cryptoManager.decrypt(c.getString(0)) + " • " + new java.util.Date(c.getLong(1))); } while (c.moveToNext());
         c.close(); db.close(); return out;
+    }
+
+    public String rollbackToPreviousPassword(int passwordId) {
+        SQLiteDatabase db = getWritableDatabase();
+        Cursor c = db.query(TABLE_HISTORY, new String[]{"id", "old_password"}, "password_id=?", new String[]{String.valueOf(passwordId)}, null, null, "changed_at DESC", "1");
+        if (!c.moveToFirst()) {
+            c.close();
+            db.close();
+            return null;
+        }
+        int historyId = c.getInt(0);
+        String oldPassword = cryptoManager.decrypt(c.getString(1));
+        c.close();
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PASSWORD, cryptoManager.encrypt(oldPassword));
+        values.put(COLUMN_LAST_CHANGED_AT, System.currentTimeMillis());
+        db.update(TABLE_NAME, values, COLUMN_ID + "=?", new String[]{String.valueOf(passwordId)});
+        db.delete(TABLE_HISTORY, "id=?", new String[]{String.valueOf(historyId)});
+        db.close();
+        return oldPassword;
     }
 
     public PasswordHealthStats getHealthStats() {
