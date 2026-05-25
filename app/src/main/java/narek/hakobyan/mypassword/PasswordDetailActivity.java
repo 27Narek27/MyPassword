@@ -19,7 +19,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
     DatabaseHelper.PasswordEntry entry;
 
     TextView       tvSite, tvLogin, tvPassword, tvWebsiteUrl;
-    MaterialButton btnShowPassword, btnEdit, btnDelete, btnAutoLogin, btnAutoChangePassword;
+    MaterialButton btnShowPassword, btnEdit, btnDelete, btnAutoLogin, btnAutoChangePassword, btnPasswordHistory;
 
     boolean passwordVisible = false;
 
@@ -41,6 +41,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
         btnDelete      = findViewById(R.id.btnDelete);
         btnAutoLogin   = findViewById(R.id.btnAutoLogin);   // NEW
         btnAutoChangePassword = findViewById(R.id.btnAutoChangePassword);
+        btnPasswordHistory = findViewById(R.id.btnPasswordHistory);
 
         loadEntry();
         bindButtons();
@@ -95,6 +96,7 @@ public class PasswordDetailActivity extends AppCompatActivity {
                     this, entry.websiteUrl, entry.login, entry.password);
         });
         btnAutoChangePassword.setOnClickListener(v -> runAutoPasswordChange());
+        btnPasswordHistory.setOnClickListener(v -> showPasswordHistoryDialog());
 
         btnEdit.setOnClickListener(v -> showEditDialog());
         btnDelete.setOnClickListener(v ->
@@ -147,6 +149,43 @@ public class PasswordDetailActivity extends AppCompatActivity {
         // Точка интеграции №2: fallback через WebView-сценарий/автоматизацию формы.
         // Здесь intentionally оставлен stub; замените на рабочую интеграцию под ваши цели.
         return false;
+    }
+
+    private void showPasswordHistoryDialog() {
+        java.util.ArrayList<DatabaseHelper.PasswordVersion> versions = dbHelper.getPasswordVersions(entryId);
+        if (versions.isEmpty()) {
+            Toast.makeText(this, "История паролей пока пуста", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] items = new String[versions.size()];
+        for (int i = 0; i < versions.size(); i++) {
+            DatabaseHelper.PasswordVersion v = versions.get(i);
+            items[i] = v.password + " • " + new java.util.Date(v.changedAt);
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Выберите версию для отката")
+                .setItems(items, (dialog, which) -> confirmRollback(versions.get(which)))
+                .setNegativeButton("Отмена", null)
+                .show();
+    }
+
+    private void confirmRollback(DatabaseHelper.PasswordVersion version) {
+        new AlertDialog.Builder(this)
+                .setTitle("Откатить пароль?")
+                .setMessage("Будет восстановлена версия от " + new java.util.Date(version.changedAt))
+                .setPositiveButton("Откатить", (d, w) -> {
+                    String restored = dbHelper.rollbackToVersion(entryId, version.historyId);
+                    if (restored == null) {
+                        Toast.makeText(this, "Не удалось выполнить откат", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    Toast.makeText(this, "Пароль восстановлен", Toast.LENGTH_SHORT).show();
+                    loadEntry();
+                })
+                .setNegativeButton("Отмена", null)
+                .show();
     }
 
     private void showEditDialog() {

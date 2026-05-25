@@ -83,6 +83,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         public int stalePasswords;
     }
 
+    public static class PasswordVersion {
+        public int historyId;
+        public String password;
+        public long changedAt;
+    }
+
     private final CryptoManager cryptoManager;
 
     public DatabaseHelper(Context context) { super(context, DATABASE_NAME, null, DATABASE_VERSION); cryptoManager = new CryptoManager(); }
@@ -161,6 +167,52 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor c = db.query(TABLE_HISTORY, new String[]{"old_password","changed_at"}, "password_id=?", new String[]{String.valueOf(id)}, null, null, "changed_at DESC");
         if (c.moveToFirst()) do { out.add(cryptoManager.decrypt(c.getString(0)) + " • " + new java.util.Date(c.getLong(1))); } while (c.moveToNext());
         c.close(); db.close(); return out;
+    }
+
+    public ArrayList<PasswordVersion> getPasswordVersions(int passwordId) {
+        ArrayList<PasswordVersion> out = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.query(TABLE_HISTORY, new String[]{"id", "old_password", "changed_at"}, "password_id=?", new String[]{String.valueOf(passwordId)}, null, null, "changed_at DESC");
+        while (c.moveToNext()) {
+            PasswordVersion version = new PasswordVersion();
+            version.historyId = c.getInt(0);
+            version.password = cryptoManager.decrypt(c.getString(1));
+            version.changedAt = c.getLong(2);
+            out.add(version);
+        }
+        c.close();
+        db.close();
+        return out;
+    }
+
+    public String rollbackToVersion(int passwordId, int historyId) {
+        SQLiteDatabase db = getWritableDatabase();
+        Cursor c = db.query(TABLE_HISTORY, new String[]{"old_password"}, "id=? AND password_id=?", new String[]{String.valueOf(historyId), String.valueOf(passwordId)}, null, null, null, "1");
+        if (!c.moveToFirst()) {
+            c.close();
+            db.close();
+            return null;
+        }
+
+        String rollbackPassword = cryptoManager.decrypt(c.getString(0));
+        c.close();
+
+        PasswordEntry current = getPasswordById(passwordId);
+        if (current != null && !rollbackPassword.equals(current.password)) {
+            ContentValues backupCurrent = new ContentValues();
+            backupCurrent.put("password_id", passwordId);
+            backupCurrent.put("old_password", cryptoManager.encrypt(current.password));
+            backupCurrent.put("changed_at", System.currentTimeMillis());
+            db.insert(TABLE_HISTORY, null, backupCurrent);
+        }
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PASSWORD, cryptoManager.encrypt(rollbackPassword));
+        values.put(COLUMN_LAST_CHANGED_AT, System.currentTimeMillis());
+        db.update(TABLE_NAME, values, COLUMN_ID + "=?", new String[]{String.valueOf(passwordId)});
+        db.delete(TABLE_HISTORY, "id=?", new String[]{String.valueOf(historyId)});
+        db.close();
+        return rollbackPassword;
     }
 
     public String rollbackToPreviousPassword(int passwordId) {
