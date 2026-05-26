@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">MyPassword</string>
+    <string name="open_app">Открыть</string>
+    <string name="about_us">О приложении</string>
+    <string name="enter_master_password_title">Введите мастер-пароль</string>
+    <string name="enter_master_password_subtitle">Введите мастер-пароль для входа в приложение.</string>
+    <string name="enter_master_password_hint">Мастер-пароль</string>
+    <string name="create_master_password_title">Создать мастер-пароль</string>
+    <string name="create_master_password_subtitle">Мастер-пароль не найден. Создайте его для защиты приложения.</string>
+    <string name="create_master_password_hint">Создайте мастер-пароль</string>
+    <string name="unlock_button">Войти</string>
+    <string name="create_password_button">Создать пароль</string>
+    <string name="master_password_required">Введите мастер-пароль.</string>
+    <string name="master_password_too_short">Минимум 4 символа.</string>
+    <string name="master_password_incorrect">Неверный мастер-пароль.</string>
+    <string name="master_password_created">Мастер-пароль создан.</string>
+</resources>
