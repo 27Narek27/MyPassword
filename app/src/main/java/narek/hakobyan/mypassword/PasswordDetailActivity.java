@@ -14,12 +14,12 @@ import com.google.android.material.button.MaterialButton;
 
 public class PasswordDetailActivity extends AppCompatActivity {
 
-    DatabaseHelper              dbHelper;
-    int                         entryId;
+    DatabaseHelper               dbHelper;
+    int                          entryId;
     DatabaseHelper.PasswordEntry entry;
 
     TextView       tvSite, tvLogin, tvPassword, tvWebsiteUrl;
-    MaterialButton btnShowPassword, btnEdit, btnDelete, btnAutoLogin, btnAutoChangePassword, btnPasswordHistory;
+    MaterialButton btnShowPassword, btnEdit, btnDelete, btnAutoLogin, btnPasswordHistory;
 
     boolean passwordVisible = false;
 
@@ -32,20 +32,22 @@ public class PasswordDetailActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         entryId  = getIntent().getIntExtra("id", -1);
 
-        tvSite         = findViewById(R.id.tvSite);
-        tvWebsiteUrl   = findViewById(R.id.tvWebsiteUrl);   // NEW
-        tvLogin        = findViewById(R.id.tvLogin);
-        tvPassword     = findViewById(R.id.tvPassword);
-        btnShowPassword = findViewById(R.id.btnShowPassword);
-        btnEdit        = findViewById(R.id.btnEdit);
-        btnDelete      = findViewById(R.id.btnDelete);
-        btnAutoLogin   = findViewById(R.id.btnAutoLogin);   // NEW
-        btnAutoChangePassword = findViewById(R.id.btnAutoChangePassword);
+        tvSite           = findViewById(R.id.tvSite);
+        tvWebsiteUrl     = findViewById(R.id.tvWebsiteUrl);
+        tvLogin          = findViewById(R.id.tvLogin);
+        tvPassword       = findViewById(R.id.tvPassword);
+        btnShowPassword  = findViewById(R.id.btnShowPassword);
+        btnEdit          = findViewById(R.id.btnEdit);
+        btnDelete        = findViewById(R.id.btnDelete);
+        btnAutoLogin     = findViewById(R.id.btnAutoLogin);
         btnPasswordHistory = findViewById(R.id.btnPasswordHistory);
 
         loadEntry();
         bindButtons();
     }
+
+    // ── display ──────────────────────────────────────────────────────────────
+
     private void loadEntry() {
         entry = dbHelper.getPasswordById(entryId);
         if (entry == null) {
@@ -63,47 +65,46 @@ public class PasswordDetailActivity extends AppCompatActivity {
         boolean hasUrl = !TextUtils.isEmpty(entry.websiteUrl);
         if (hasUrl) {
             tvWebsiteUrl.setText(entry.websiteUrl);
-
             tvWebsiteUrl.setPaintFlags(
-                    tvWebsiteUrl.getPaintFlags()
-                            | android.graphics.Paint.UNDERLINE_TEXT_FLAG);
+                    tvWebsiteUrl.getPaintFlags() | android.graphics.Paint.UNDERLINE_TEXT_FLAG);
             tvWebsiteUrl.setOnClickListener(v ->
                     Webviewautologinactivity.launch(
                             this, entry.websiteUrl, entry.login, entry.password));
             btnAutoLogin.setVisibility(View.VISIBLE);
-            btnAutoChangePassword.setVisibility(View.VISIBLE);
         } else {
             tvWebsiteUrl.setText("—");
             tvWebsiteUrl.setOnClickListener(null);
             btnAutoLogin.setVisibility(View.GONE);
-            btnAutoChangePassword.setVisibility(View.GONE);
         }
     }
 
+    // ── buttons ──────────────────────────────────────────────────────────────
+
     private void bindButtons() {
+
         btnShowPassword.setOnClickListener(v -> {
             passwordVisible = !passwordVisible;
             tvPassword.setText(passwordVisible ? entry.password : "••••••••");
             btnShowPassword.setText(passwordVisible ? "Скрыть пароль" : "Показать пароль");
         });
+
         btnAutoLogin.setOnClickListener(v -> {
             if (TextUtils.isEmpty(entry.websiteUrl)) {
-                Toast.makeText(this, "Для этой записи не сохранён URL",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "URL не сохранён", Toast.LENGTH_SHORT).show();
                 return;
             }
             Webviewautologinactivity.launch(
                     this, entry.websiteUrl, entry.login, entry.password);
         });
-        btnAutoChangePassword.setOnClickListener(v -> runAutoPasswordChange());
-        btnPasswordHistory.setOnClickListener(v -> showPasswordHistoryDialog());
 
+        btnPasswordHistory.setOnClickListener(v -> showPasswordHistoryDialog());
         btnEdit.setOnClickListener(v -> showEditDialog());
+
         btnDelete.setOnClickListener(v ->
                 new AlertDialog.Builder(this)
                         .setTitle("Удалить запись")
-                        .setMessage("Удалить запись для \"" + entry.site + "\"?")
-                        .setPositiveButton("Удалить", (dialog, which) -> {
+                        .setMessage("Удалить запись для «" + entry.site + "»?")
+                        .setPositiveButton("Удалить", (d, w) -> {
                             dbHelper.deletePassword(entryId);
                             Toast.makeText(this, "Удалено", Toast.LENGTH_SHORT).show();
                             finish();
@@ -112,73 +113,47 @@ public class PasswordDetailActivity extends AppCompatActivity {
                         .show());
     }
 
-    private void runAutoPasswordChange() {
-        if (entry == null || TextUtils.isEmpty(entry.websiteUrl)) {
-            Toast.makeText(this, "Нужен URL для автоматической смены пароля", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        btnAutoChangePassword.setEnabled(false);
-        btnAutoChangePassword.setText("Смена пароля...");
-
-        new Thread(() -> {
-            try {
-                AutoPasswordChangeManager manager = new AutoPasswordChangeManager(dbHelper);
-                String newPassword = manager.rotatePassword(entry.id, this::changePasswordOnRemoteSite);
-                runOnUiThread(() -> {
-                    btnAutoChangePassword.setEnabled(true);
-                    btnAutoChangePassword.setText("Автоматически сменить пароль");
-                    Toast.makeText(this, "Пароль обновлён автоматически", Toast.LENGTH_LONG).show();
-                    loadEntry();
-                });
-            } catch (Exception e) {
-                runOnUiThread(() -> {
-                    btnAutoChangePassword.setEnabled(true);
-                    btnAutoChangePassword.setText("Автоматически сменить пароль");
-                    Toast.makeText(this, "Не удалось сменить пароль: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                });
-            }
-        }).start();
-    }
-
-    private boolean changePasswordOnRemoteSite(String websiteUrl, String login, String oldPassword, String newPassword) {
-        // Точка интеграции №1: вызов вашего backend-API (рекомендуется)
-        // POST /password-rotation { url, login, oldPassword, newPassword }
-        // return true, если сторонний сайт принял смену.
-
-        // Точка интеграции №2: fallback через WebView-сценарий/автоматизацию формы.
-        // Здесь intentionally оставлен stub; замените на рабочую интеграцию под ваши цели.
-        return false;
-    }
+    // ── password history / rollback ──────────────────────────────────────────
 
     private void showPasswordHistoryDialog() {
-        java.util.ArrayList<DatabaseHelper.PasswordVersion> versions = dbHelper.getPasswordVersions(entryId);
+        java.util.ArrayList<DatabaseHelper.PasswordVersion> versions =
+                dbHelper.getPasswordVersions(entryId);
+
         if (versions.isEmpty()) {
             Toast.makeText(this, "История паролей пока пуста", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        java.text.SimpleDateFormat sdf =
+                new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault());
+
         String[] items = new String[versions.size()];
         for (int i = 0; i < versions.size(); i++) {
             DatabaseHelper.PasswordVersion v = versions.get(i);
-            items[i] = v.password + " • " + new java.util.Date(v.changedAt);
+            items[i] = "••••••••  •  " + sdf.format(new java.util.Date(v.changedAt));
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Выберите версию для отката")
+                .setTitle("История паролей")
                 .setItems(items, (dialog, which) -> confirmRollback(versions.get(which)))
-                .setNegativeButton("Отмена", null)
+                .setNegativeButton("Закрыть", null)
                 .show();
     }
 
     private void confirmRollback(DatabaseHelper.PasswordVersion version) {
+        java.text.SimpleDateFormat sdf =
+                new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault());
+
         new AlertDialog.Builder(this)
                 .setTitle("Откатить пароль?")
-                .setMessage("Будет восстановлена версия от " + new java.util.Date(version.changedAt))
+                .setMessage("Будет восстановлена версия от "
+                        + sdf.format(new java.util.Date(version.changedAt))
+                        + ".\n\nТекущая версия сохранится в истории.")
                 .setPositiveButton("Откатить", (d, w) -> {
                     String restored = dbHelper.rollbackToVersion(entryId, version.historyId);
                     if (restored == null) {
-                        Toast.makeText(this, "Не удалось выполнить откат", Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, "Не удалось выполнить откат",
+                                Toast.LENGTH_LONG).show();
                         return;
                     }
                     Toast.makeText(this, "Пароль восстановлен", Toast.LENGTH_SHORT).show();
@@ -188,12 +163,14 @@ public class PasswordDetailActivity extends AppCompatActivity {
                 .show();
     }
 
+    // ── edit dialog ──────────────────────────────────────────────────────────
+
     private void showEditDialog() {
-        View redactor   = getLayoutInflater().inflate(R.layout.redactor, null);
-        EditText etSite = redactor.findViewById(R.id.etSite);
-        EditText etUrl  = redactor.findViewById(R.id.etWebsiteUrl);
-        EditText etLogin = redactor.findViewById(R.id.etLogin);
-        EditText etPass  = redactor.findViewById(R.id.etPassword);
+        View     redactor = getLayoutInflater().inflate(R.layout.redactor, null);
+        EditText etSite   = redactor.findViewById(R.id.etSite);
+        EditText etUrl    = redactor.findViewById(R.id.etWebsiteUrl);
+        EditText etLogin  = redactor.findViewById(R.id.etLogin);
+        EditText etPass   = redactor.findViewById(R.id.etPassword);
 
         etSite.setText(entry.site);
         etUrl.setText(entry.websiteUrl);
@@ -203,13 +180,12 @@ public class PasswordDetailActivity extends AppCompatActivity {
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Редактировать запись")
                 .setView(redactor)
-                .setPositiveButton("Сохранить",   null)
-                .setNegativeButton("Отмена", null)
+                .setPositiveButton("Сохранить", null)
+                .setNegativeButton("Отмена",    null)
                 .create();
 
         dialog.setOnShowListener(d ->
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-
                     String newSite  = etSite.getText().toString().trim();
                     String newUrl   = etUrl.getText().toString().trim();
                     String newLogin = etLogin.getText().toString().trim();
@@ -217,18 +193,15 @@ public class PasswordDetailActivity extends AppCompatActivity {
 
                     if (TextUtils.isEmpty(newSite)) {
                         etSite.setError("Введите название или сайт");
-                        etSite.requestFocus();
-                        return;
+                        etSite.requestFocus(); return;
                     }
                     if (TextUtils.isEmpty(newLogin)) {
-                        etLogin.setError("Введите логин / имя пользователя");
-                        etLogin.requestFocus();
-                        return;
+                        etLogin.setError("Введите логин");
+                        etLogin.requestFocus(); return;
                     }
                     if (!PasswordSecurityUtils.isNonEmpty(newPass)) {
                         etPass.setError(PasswordSecurityUtils.ENTRY_VALIDATION_ERROR_MESSAGE);
-                        etPass.requestFocus();
-                        return;
+                        etPass.requestFocus(); return;
                     }
                     try {
                         dbHelper.updatePassword(entryId, newSite, newLogin, newPass, newUrl);

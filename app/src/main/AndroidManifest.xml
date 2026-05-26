@@ -2,54 +2,41 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET" />
+    <!--
+        INTERNET permission intentionally removed.
+        The app is fully offline — no network calls are made.
+    -->
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="Mypassword"
+        android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Mypassword">
+        android:theme="@style/Theme.Mypassword"
+        tools:targetApi="31">
 
-        <activity
-            android:name=".MasterPasswordActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".dialog_password"
-            android:exported="false" />
-
-        <activity
-            android:name=".main_displey"
-            android:exported="false" />
-
-        <activity
-            android:name=".PasswordDetailActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".Webviewautologinactivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".PasswordHealthDashboardActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".CamouflageCalculatorActivity"
-            android:exported="false" />
-
+        <!-- Single entry point — the real app launcher -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".MasterPasswordActivity" android:exported="false" />
+        <activity android:name=".dialog_password"        android:exported="false" />
+        <activity android:name=".main_displey"           android:exported="false" />
+        <activity android:name=".PasswordDetailActivity" android:exported="false" />
+        <activity android:name=".Webviewautologinactivity" android:exported="false" />
+        <activity android:name=".PasswordHealthDashboardActivity" android:exported="false" />
+
+        <!-- CamouflageCalculatorActivity REMOVED -->
 
     </application>
 

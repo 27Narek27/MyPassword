@@ -8,7 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,11 +19,10 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
-    private MasterPasswordManager  masterPasswordManager;
+    private MasterPasswordManager    masterPasswordManager;
     private SecurityQuestionsManager sqManager;
-    private LockManager            lockManager;
+    private LockManager              lockManager;
 
-    /* Predefined question pool that the user picks from */
     private static final String[] QUESTION_POOL = {
             "Имя вашего первого питомца?",
             "Девичья фамилия матери?",
@@ -50,47 +48,34 @@ public class MainActivity extends AppCompatActivity {
         open.setOnClickListener(v -> handleOpenClick());
     }
 
-    /* ──────────────────────────────────────────────────────────────────
-       Entry point
-       ────────────────────────────────────────────────────────────────── */
+    // ── entry point ──────────────────────────────────────────────────────────
 
     private void handleOpenClick() {
-        // 1. Timed lock active?
         if (lockManager.isTimedLockActive()) {
             showTimedLockMessage();
             return;
         }
-        // 2. Timed lock just expired → enter final phase
-        if (lockManager.isInFinalPhase() == false
+        // Timed lock just expired → enter final phase
+        if (!lockManager.isInFinalPhase()
                 && lockManager.timedLockRemainingMs() == 0
                 && lockManager.isLocked()
                 && lockManager.getQuestionFails() >= LockManager.MAX_QUESTION_ATTEMPTS) {
             lockManager.onTimedLockExpired();
         }
-        // 3. App locked → show security questions
         if (lockManager.isLocked()) {
-            if (sqManager.hasSecurityQuestions()) {
-                showSecurityQuestionsDialog();
-            } else {
-                showTimedLockMessage(); // no questions saved → full lock (edge-case)
-            }
+            if (sqManager.hasSecurityQuestions()) showSecurityQuestionsDialog();
+            else showTimedLockMessage();
             return;
         }
-        // 4. Normal flow
-        if (!masterPasswordManager.hasMasterPassword()) {
-            showCreateMasterPasswordDialog();
-        } else {
-            showUnlockDialog();
-        }
+        if (!masterPasswordManager.hasMasterPassword()) showCreateMasterPasswordDialog();
+        else showUnlockDialog();
     }
 
-    /* ──────────────────────────────────────────────────────────────────
-       Create master password (first launch)
-       ────────────────────────────────────────────────────────────────── */
+    // ── create master password ────────────────────────────────────────────────
 
     private void showCreateMasterPasswordDialog() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
         int dp16 = dp(16);
         layout.setPadding(dp16, dp16, dp16, 0);
 
@@ -101,8 +86,7 @@ public class MainActivity extends AppCompatActivity {
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Мастер-пароль")
-                .setMessage("Создайте пароль для защиты приложения.\n\n"
-                        + "Требования: ≥16 символов, заглавная буква, цифра, спецсимвол.")
+                .setMessage("Требования: ≥16 символов, заглавная буква, цифра, спецсимвол.")
                 .setView(layout)
                 .setCancelable(false)
                 .setNegativeButton("Отмена", null)
@@ -113,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                     String password = passwordInput.getText().toString().trim();
                     String confirm  = confirmInput.getText().toString().trim();
-
                     if (!PasswordSecurityUtils.isValidMasterPassword(password)) {
                         passwordInput.setError(PasswordSecurityUtils.MASTER_VALIDATION_ERROR_MESSAGE);
                         return;
@@ -136,16 +119,12 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    /* ──────────────────────────────────────────────────────────────────
-       Setup security questions (shown once after master password creation)
-       ────────────────────────────────────────────────────────────────── */
+    // ── setup security questions ──────────────────────────────────────────────
 
     private void showSetupSecurityQuestionsDialog() {
-        View view = LayoutInflater.from(this).inflate(R.layout.dialog_security_questions_setup, null);
+        View view = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_security_questions_setup, null);
 
-        // 4 question spinners + answer fields wired in the layout via ids:
-        // tvQ1..tvQ4 (TextViews showing the question), etA1..etA4 (EditTexts for answers)
-        // We assign questions from the pool sequentially (first 4)
         TextView[] tvQ = new TextView[4];
         EditText[] etA = new EditText[4];
         for (int i = 0; i < 4; i++) {
@@ -158,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Секретные вопросы")
-                .setMessage("Ответьте на 4 вопроса. Они помогут восстановить доступ.\n"
+                .setMessage("Ответьте на 4 вопроса для восстановления доступа.\n"
                         + "Ответы нечувствительны к регистру.")
                 .setView(view)
                 .setCancelable(false)
@@ -178,7 +157,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                     String[] questions = new String[4];
                     for (int i = 0; i < 4; i++) questions[i] = QUESTION_POOL[i];
-
                     sqManager.saveQuestions(questions, answers);
                     lockManager.onSuccessfulUnlock();
                     dialog.dismiss();
@@ -188,9 +166,7 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    /* ──────────────────────────────────────────────────────────────────
-       Unlock dialog (normal)
-       ────────────────────────────────────────────────────────────────── */
+    // ── unlock ────────────────────────────────────────────────────────────────
 
     private void showUnlockDialog() {
         EditText passwordInput = makePasswordInput("Введите мастер-пароль");
@@ -212,7 +188,8 @@ public class MainActivity extends AppCompatActivity {
                         dialog.dismiss();
                         openPasswordScreen();
                     } else {
-                        int failed = lockManager.incrementMasterFails();
+                        int failed    = lockManager.incrementMasterFails();
+                        int remaining = LockManager.MAX_MASTER_ATTEMPTS - failed;
                         if (failed >= LockManager.MAX_MASTER_ATTEMPTS) {
                             lockManager.lock();
                             dialog.dismiss();
@@ -221,7 +198,6 @@ public class MainActivity extends AppCompatActivity {
                                     Toast.LENGTH_LONG).show();
                             showSecurityQuestionsDialog();
                         } else {
-                            int remaining = LockManager.MAX_MASTER_ATTEMPTS - failed;
                             passwordInput.setError("Неверный пароль. Осталось попыток: " + remaining);
                         }
                     }
@@ -230,20 +206,17 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    /* ──────────────────────────────────────────────────────────────────
-       Security-questions unlock dialog
-       ────────────────────────────────────────────────────────────────── */
+    // ── security questions ────────────────────────────────────────────────────
 
     private void showSecurityQuestionsDialog() {
-        // Check timed lock again (edge case: dialog re-opened)
         if (lockManager.isTimedLockActive()) {
             showTimedLockMessage();
             return;
         }
 
-        boolean isFinal = lockManager.isInFinalPhase();
-        int maxAttempts = lockManager.maxQuestionAttempts();
-        int usedAttempts = lockManager.getQuestionFails();
+        boolean isFinal     = lockManager.isInFinalPhase();
+        int     maxAttempts = lockManager.maxQuestionAttempts();
+        int     used        = lockManager.getQuestionFails();
 
         View view = LayoutInflater.from(this)
                 .inflate(R.layout.dialog_security_questions_verify, null);
@@ -252,17 +225,16 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < 4; i++) {
             int tvId = getResources().getIdentifier("tvSecQ" + (i + 1), "id", getPackageName());
             int etId = getResources().getIdentifier("etSecA" + (i + 1), "id", getPackageName());
-            TextView tvQ = view.findViewById(tvId);
+            ((TextView) view.findViewById(tvId))
+                    .setText((i + 1) + ". " + sqManager.getQuestion(i));
             etA[i] = view.findViewById(etId);
-            tvQ.setText((i + 1) + ". " + sqManager.getQuestion(i));
         }
 
         String title   = isFinal ? "⚠️ Последний шанс" : "Секретные вопросы";
         String message = isFinal
-                ? "Осталось попыток: " + (maxAttempts - usedAttempts)
+                ? "Осталось попыток: " + (maxAttempts - used)
                 + "\nПосле их исчерпания все данные будут УДАЛЕНЫ."
-                : "Введите ответы на все 4 вопроса.\n"
-                + "Осталось попыток: " + (maxAttempts - usedAttempts);
+                : "Введите ответы на все 4 вопроса.\nОсталось попыток: " + (maxAttempts - used);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(title)
@@ -283,32 +255,21 @@ public class MainActivity extends AppCompatActivity {
                             return;
                         }
                     }
-
                     if (sqManager.verifyAllAnswers(answers)) {
                         lockManager.onSuccessfulUnlock();
                         dialog.dismiss();
                         openPasswordScreen();
                     } else {
-                        int fails    = lockManager.incrementQuestionFails();
-                        int maxAtts  = lockManager.maxQuestionAttempts();
-                        int remaining = maxAtts - fails;
-
-                        if (fails >= maxAtts) {
+                        int fails     = lockManager.incrementQuestionFails();
+                        int remaining = lockManager.maxQuestionAttempts() - fails;
+                        if (fails >= lockManager.maxQuestionAttempts()) {
                             dialog.dismiss();
-                            if (lockManager.isInFinalPhase()) {
-                                // WIPE
-                                performEmergencyWipe();
-                            } else {
-                                // Start 24-hour timed lock
-                                lockManager.startTimedLock();
-                                showTimedLockMessage();
-                            }
+                            if (lockManager.isInFinalPhase()) performEmergencyWipe();
+                            else { lockManager.startTimedLock(); showTimedLockMessage(); }
                         } else {
-                            // Update message
                             TextView tvMsg = dialog.findViewById(android.R.id.message);
-                            if (tvMsg != null) {
+                            if (tvMsg != null)
                                 tvMsg.setText("Неверный ответ. Осталось попыток: " + remaining);
-                            }
                             Toast.makeText(this,
                                     "Неверно. Осталось попыток: " + remaining,
                                     Toast.LENGTH_SHORT).show();
@@ -319,38 +280,37 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    /* ──────────────────────────────────────────────────────────────────
-       Timed-lock screen
-       ────────────────────────────────────────────────────────────────── */
+    // ── timed lock ────────────────────────────────────────────────────────────
 
     private void showTimedLockMessage() {
         long ms      = lockManager.timedLockRemainingMs();
-        long minutes = TimeUnit.MILLISECONDS.toMinutes(ms);
+        long hours   = TimeUnit.MILLISECONDS.toHours(ms);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(ms) % 60;
         long seconds = TimeUnit.MILLISECONDS.toSeconds(ms) % 60;
 
-        String timeLeft = String.format(Locale.getDefault(), "%d мин %02d сек", minutes, seconds);
+        String timeLeft = String.format(Locale.getDefault(),
+                "%d ч %02d мин %02d сек", hours, minutes, seconds);
 
         new AlertDialog.Builder(this)
                 .setTitle("Приложение заблокировано")
-                .setMessage("Вы исчерпали все попытки ввода секретных ответов.\n\n"
-                        + "Следующая попытка доступна через: " + timeLeft + "\n\n"
+                .setMessage("Вы исчерпали все попытки.\n\n"
+                        + "Следующая попытка через: " + timeLeft + "\n\n"
                         + "⚠️ После разблокировки у вас будет ещё 5 попыток. "
-                        + "Если они будут неверными — все данные будут удалены без возможности восстановления.")
+                        + "Если они будут неверными — все данные удалятся без возможности восстановления.")
                 .setPositiveButton("ОК", null)
                 .setCancelable(false)
                 .show();
     }
 
-    /* ──────────────────────────────────────────────────────────────────
-       Emergency wipe
-       ────────────────────────────────────────────────────────────────── */
+    // ── emergency wipe ────────────────────────────────────────────────────────
 
     private void performEmergencyWipe() {
         deleteDatabase("passwords.db");
         clearAllSharedPreferences();
         new CryptoManager().resetKeyMaterial();
         sqManager.clear();
-        Toast.makeText(this, "Все данные удалены после исчерпания попыток.", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Все данные удалены после исчерпания попыток.",
+                Toast.LENGTH_LONG).show();
         recreate();
     }
 
@@ -366,9 +326,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /* ──────────────────────────────────────────────────────────────────
-       Helpers
-       ────────────────────────────────────────────────────────────────── */
+    // ── helpers ───────────────────────────────────────────────────────────────
 
     private void openPasswordScreen() {
         startActivity(new Intent(this, main_displey.class));

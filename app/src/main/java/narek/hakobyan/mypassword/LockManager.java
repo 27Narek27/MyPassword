@@ -6,30 +6,31 @@ import android.content.SharedPreferences;
 /**
  * Tracks login-failure state and lock-out logic:
  *
- *  Phase 1 – master password attempts
+ *  Phase 1 — master password attempts
  *    Up to MAX_MASTER_ATTEMPTS (10) wrong passwords.
  *    On reaching the limit → app locks, asks security questions.
  *
- *  Phase 2 – security-question attempts
+ *  Phase 2 — security-question attempts
  *    Up to MAX_QUESTION_ATTEMPTS (10) wrong answers.
- *    On reaching the limit → TIMED LOCK for LOCK_DURATION_MS (24 h).
+ *    On reaching the limit → TIMED LOCK for 24 hours (LOCK_DURATION_MS).
  *    After the timed lock expires → 5 more attempts (FINAL_ATTEMPTS).
- *    If those 5 are exhausted → WIPE.
+ *    If those 5 are exhausted → EMERGENCY WIPE.
  */
 public class LockManager {
 
-    /* ── constants ─────────────────────────────────────────────────── */
-    public static final int  MAX_MASTER_ATTEMPTS  = 10;
+    // ── constants ────────────────────────────────────────────────────────────
+    public static final int  MAX_MASTER_ATTEMPTS   = 10;
     public static final int  MAX_QUESTION_ATTEMPTS = 10;
     public static final int  FINAL_ATTEMPTS        = 5;
-    public static final long LOCK_DURATION_MS      = 5L * 60 * 1000; // 5 минут
+    /** 24-hour timed lock after exhausting security-question attempts. */
+    public static final long LOCK_DURATION_MS      = 24L * 60 * 60 * 1000; // 24 hours
 
-    /* ── prefs keys ─────────────────────────────────────────────────── */
-    private static final String PREFS              = "lock_manager_prefs";
-    private static final String KEY_MASTER_FAILS   = "master_failed";
-    private static final String KEY_QUESTION_FAILS = "question_failed";
-    private static final String KEY_LOCKED          = "is_locked";          // awaiting security Qs
-    private static final String KEY_TIMED_LOCK_UNTIL = "timed_lock_until";  // epoch ms, 0 = none
+    // ── prefs keys ───────────────────────────────────────────────────────────
+    private static final String PREFS               = "lock_manager_prefs";
+    private static final String KEY_MASTER_FAILS    = "master_failed";
+    private static final String KEY_QUESTION_FAILS  = "question_failed";
+    private static final String KEY_LOCKED          = "is_locked";
+    private static final String KEY_TIMED_LOCK_UNTIL = "timed_lock_until";
     private static final String KEY_IN_FINAL_PHASE  = "in_final_phase";
 
     private final SharedPreferences prefs;
@@ -38,16 +39,11 @@ public class LockManager {
         prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    /* ════════════════════════════════════════════════════════════════
-       Master-password phase
-       ════════════════════════════════════════════════════════════════ */
+    // ── master-password phase ────────────────────────────────────────────────
 
-    public int getMasterFails()  { return prefs.getInt(KEY_MASTER_FAILS, 0); }
+    public int getMasterFails() { return prefs.getInt(KEY_MASTER_FAILS, 0); }
 
-    /**
-     * Call when the master password is wrong.
-     * @return new fail count
-     */
+    /** Call when the master password is wrong. @return new fail count */
     public int incrementMasterFails() {
         int n = getMasterFails() + 1;
         prefs.edit().putInt(KEY_MASTER_FAILS, n).apply();
@@ -58,25 +54,23 @@ public class LockManager {
         prefs.edit().putInt(KEY_MASTER_FAILS, 0).apply();
     }
 
-    /** Call when the master password is correct – resets everything. */
+    /** Call when the master password is correct — resets everything. */
     public void onSuccessfulUnlock() {
         prefs.edit()
-                .putInt(KEY_MASTER_FAILS,    0)
-                .putInt(KEY_QUESTION_FAILS,  0)
-                .putBoolean(KEY_LOCKED,       false)
+                .putInt(KEY_MASTER_FAILS,     0)
+                .putInt(KEY_QUESTION_FAILS,   0)
+                .putBoolean(KEY_LOCKED,        false)
                 .putLong(KEY_TIMED_LOCK_UNTIL, 0L)
                 .putBoolean(KEY_IN_FINAL_PHASE, false)
                 .apply();
     }
 
-    /* ════════════════════════════════════════════════════════════════
-       Security-questions phase
-       ════════════════════════════════════════════════════════════════ */
+    // ── security-questions phase ─────────────────────────────────────────────
 
-    /** True when master-password limit was hit and the app is locked. */
+    /** True when master-password limit was hit and the app awaits security answers. */
     public boolean isLocked() { return prefs.getBoolean(KEY_LOCKED, false); }
 
-    /** Lock the app (transition to security-questions phase). */
+    /** Lock the app — transition to security-questions phase. */
     public void lock() {
         prefs.edit()
                 .putBoolean(KEY_LOCKED, true)
@@ -84,7 +78,7 @@ public class LockManager {
                 .apply();
     }
 
-    /* ── timed lock ─────────────────────────────────────────────── */
+    // ── timed lock (24 h) ────────────────────────────────────────────────────
 
     /** True while the 24-hour timed lock is active. */
     public boolean isTimedLockActive() {
@@ -94,21 +88,22 @@ public class LockManager {
 
     /** Milliseconds remaining in the timed lock (0 if not active). */
     public long timedLockRemainingMs() {
-        long until = prefs.getLong(KEY_TIMED_LOCK_UNTIL, 0L);
+        long until   = prefs.getLong(KEY_TIMED_LOCK_UNTIL, 0L);
         long remaining = until - System.currentTimeMillis();
         return Math.max(remaining, 0L);
     }
 
-    /** Start the 24-hour timed lock and switch to final phase. */
+    /** Start the 24-hour timed lock after exhausting security-question attempts. */
     public void startTimedLock() {
         prefs.edit()
-                .putLong(KEY_TIMED_LOCK_UNTIL, System.currentTimeMillis() + LOCK_DURATION_MS)
-                .putBoolean(KEY_IN_FINAL_PHASE, false)  // final phase begins AFTER timed lock
+                .putLong(KEY_TIMED_LOCK_UNTIL,
+                        System.currentTimeMillis() + LOCK_DURATION_MS)
+                .putBoolean(KEY_IN_FINAL_PHASE, false)
                 .putInt(KEY_QUESTION_FAILS, 0)
                 .apply();
     }
 
-    /** Called when the timed lock has expired – enables the final 5-attempt phase. */
+    /** Call when the timed lock has expired — enables the final 5-attempt phase. */
     public void onTimedLockExpired() {
         prefs.edit()
                 .putLong(KEY_TIMED_LOCK_UNTIL, 0L)
@@ -119,7 +114,7 @@ public class LockManager {
 
     public boolean isInFinalPhase() { return prefs.getBoolean(KEY_IN_FINAL_PHASE, false); }
 
-    /* ── question-fail counter ──────────────────────────────────── */
+    // ── question-fail counter ────────────────────────────────────────────────
 
     public int getQuestionFails() { return prefs.getInt(KEY_QUESTION_FAILS, 0); }
 
