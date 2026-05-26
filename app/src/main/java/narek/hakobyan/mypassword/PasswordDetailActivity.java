@@ -46,7 +46,6 @@ public class PasswordDetailActivity extends AppCompatActivity {
         bindButtons();
     }
 
-    // ── display ──────────────────────────────────────────────────────────────
 
     private void loadEntry() {
         entry = dbHelper.getPasswordById(entryId);
@@ -78,7 +77,6 @@ public class PasswordDetailActivity extends AppCompatActivity {
         }
     }
 
-    // ── buttons ──────────────────────────────────────────────────────────────
 
     private void bindButtons() {
 
@@ -113,7 +111,6 @@ public class PasswordDetailActivity extends AppCompatActivity {
                         .show());
     }
 
-    // ── password history / rollback ──────────────────────────────────────────
 
     private void showPasswordHistoryDialog() {
         java.util.ArrayList<DatabaseHelper.PasswordVersion> versions =
@@ -163,7 +160,6 @@ public class PasswordDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    // ── edit dialog ──────────────────────────────────────────────────────────
 
     private void showEditDialog() {
         View     redactor = getLayoutInflater().inflate(R.layout.redactor, null);

@@ -23,8 +23,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Use debug signing config to allow the build to complete even if 
-            // an external release keystore is missing or misconfigured.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

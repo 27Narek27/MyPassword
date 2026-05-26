@@ -12,7 +12,6 @@
         android:background="#0f0f0f"
         android:padding="16dp">
 
-        <!-- Question 1 -->
         <TextView
             android:id="@+id/tvSecQ1"
             android:layout_width="match_parent"
@@ -35,7 +34,6 @@
             android:paddingEnd="14dp"
             android:inputType="text" />
 
-        <!-- Question 2 -->
         <TextView
             android:id="@+id/tvSecQ2"
             android:layout_width="match_parent"
@@ -58,7 +56,6 @@
             android:paddingEnd="14dp"
             android:inputType="text" />
 
-        <!-- Question 3 -->
         <TextView
             android:id="@+id/tvSecQ3"
             android:layout_width="match_parent"
@@ -81,7 +78,6 @@
             android:paddingEnd="14dp"
             android:inputType="text" />
 
-        <!-- Question 4 -->
         <TextView
             android:id="@+id/tvSecQ4"
             android:layout_width="match_parent"

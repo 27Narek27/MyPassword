@@ -80,7 +80,6 @@ public class Webviewautologinactivity extends AppCompatActivity {
             webView.stopLoading();
             webView.destroy();
         }
-        // Zero-out secrets in memory
         login    = null;
         password = null;
         super.onDestroy();
@@ -94,11 +93,8 @@ public class Webviewautologinactivity extends AppCompatActivity {
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
 
-        // SECURITY: never allow mixed content (HTTP resources on an HTTPS page).
-        // MIXED_CONTENT_ALWAYS_ALLOW was removed — it leaks credentials over HTTP.
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
-        // Disable saving form data / passwords in the WebView itself
         settings.setSaveFormData(false);
         settings.setSavePassword(false);
 
@@ -112,7 +108,6 @@ public class Webviewautologinactivity extends AppCompatActivity {
         });
     }
 
-    // ── autofill ────────────────────────────────────────────────────────────
 
     private void injectAutoFillScript() {
         String safeLogin    = escapeForJs(login    != null ? login    : "");
@@ -192,7 +187,6 @@ public class Webviewautologinactivity extends AppCompatActivity {
         });
     }
 
-    // ── helpers ─────────────────────────────────────────────────────────────
 
     private String unquoteJsResult(String raw) {
         if (raw == null) return "";
@@ -221,7 +215,6 @@ public class Webviewautologinactivity extends AppCompatActivity {
         return url;
     }
 
-    // ── WebViewClient ────────────────────────────────────────────────────────
 
     private class AutoLoginWebViewClient extends WebViewClient {
 
@@ -238,13 +231,11 @@ public class Webviewautologinactivity extends AppCompatActivity {
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            // Let the WebView handle all navigation internally
             return false;
         }
 
         @Override
         public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-            // Cancel SSL errors — never proceed on a broken certificate
             handler.cancel();
             Toast.makeText(Webviewautologinactivity.this,
                     "Автозаполнение заблокировано: ошибка SSL-сертификата",

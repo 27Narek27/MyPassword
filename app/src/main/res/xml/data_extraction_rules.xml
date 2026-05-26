@@ -1,11 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Android 12+ (API 31+) data-extraction rules.
-    Mirrors backup_rules.xml: exclude everything from both cloud backup
-    and device-to-device transfer.
-
-    See: https://developer.android.com/about/versions/12/backup-restore#xml-changes
--->
 <data-extraction-rules>
 
     <cloud-backup disableIfNoEncryptionCapabilities="true">

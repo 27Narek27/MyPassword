@@ -1,32 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Exclude ALL sensitive data from Android Auto-Backup (API 23+).
-    This means no password database, no master-password hash, no security
-    questions, no encryption keys, and no lock state will ever be backed up
-    to Google Drive or any other cloud destination.
-
-    See: https://developer.android.com/guide/topics/data/autobackup
--->
 <full-backup-content>
 
-    <!-- SQLite database that stores all encrypted passwords -->
     <exclude domain="database" path="passwords.db" />
     <exclude domain="database" path="passwords.db-shm" />
     <exclude domain="database" path="passwords.db-wal" />
 
-    <!-- All SharedPreferences files (master password hash, security questions,
-         lock state, login-failure counters, honeytoken seed flag …) -->
     <exclude domain="sharedpref" path="master_password_prefs.xml" />
     <exclude domain="sharedpref" path="security_questions_prefs.xml" />
     <exclude domain="sharedpref" path="lock_manager_prefs.xml" />
     <exclude domain="sharedpref" path="login_security_prefs.xml" />
     <exclude domain="sharedpref" path="stealth.xml" />
 
-    <!-- Catch-all: exclude every other preference file that might be added later -->
     <exclude domain="sharedpref" path="." />
 
-    <!-- AndroidKeyStore keys are hardware-bound and never leave the device,
-         but exclude the key metadata directory as an extra precaution -->
     <exclude domain="root" path="." />
 
 </full-backup-content>

@@ -64,7 +64,6 @@ public class PhishingProtectionManager {
             String host = o.optString("formActionHost", "").toLowerCase(Locale.ROOT).trim();
             out.formActionHost = host.isEmpty() ? null : host;
         } catch (Exception ignore) {
-            // Invalid JSON -> keep defaults and let upper checks block missing password fields.
         }
         return out;
     }

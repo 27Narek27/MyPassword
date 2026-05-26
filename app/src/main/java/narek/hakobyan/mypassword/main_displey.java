@@ -145,9 +145,6 @@ public class main_displey extends AppCompatActivity {
         }
     }
 
-    /* ──────────────────────────────────────────────────────────────────
-       Adapter
-       ────────────────────────────────────────────────────────────────── */
 
     static class PasswordAdapter extends RecyclerView.Adapter<PasswordAdapter.VH> {
 

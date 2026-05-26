@@ -43,7 +43,7 @@ public class dialog_password extends AppCompatActivity {
 
         btnSave.setOnClickListener(v -> {
             String site       = text(etSite);
-            String websiteUrl = text(etWebsiteUrl);   // NEW
+            String websiteUrl = text(etWebsiteUrl);
             String login      = text(etLogin);
             String password   = etPassword.getText() != null
                     ? etPassword.getText().toString() : "";

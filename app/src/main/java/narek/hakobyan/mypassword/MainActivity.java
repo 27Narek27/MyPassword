@@ -48,14 +48,12 @@ public class MainActivity extends AppCompatActivity {
         open.setOnClickListener(v -> handleOpenClick());
     }
 
-    // ── entry point ──────────────────────────────────────────────────────────
 
     private void handleOpenClick() {
         if (lockManager.isTimedLockActive()) {
             showTimedLockMessage();
             return;
         }
-        // Timed lock just expired → enter final phase
         if (!lockManager.isInFinalPhase()
                 && lockManager.timedLockRemainingMs() == 0
                 && lockManager.isLocked()
@@ -71,7 +69,6 @@ public class MainActivity extends AppCompatActivity {
         else showUnlockDialog();
     }
 
-    // ── create master password ────────────────────────────────────────────────
 
     private void showCreateMasterPasswordDialog() {
         android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
@@ -119,7 +116,6 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // ── setup security questions ──────────────────────────────────────────────
 
     private void showSetupSecurityQuestionsDialog() {
         View view = LayoutInflater.from(this)
@@ -166,7 +162,6 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // ── unlock ────────────────────────────────────────────────────────────────
 
     private void showUnlockDialog() {
         EditText passwordInput = makePasswordInput("Введите мастер-пароль");
@@ -206,7 +201,6 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // ── security questions ────────────────────────────────────────────────────
 
     private void showSecurityQuestionsDialog() {
         if (lockManager.isTimedLockActive()) {
@@ -280,7 +274,6 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // ── timed lock ────────────────────────────────────────────────────────────
 
     private void showTimedLockMessage() {
         long ms      = lockManager.timedLockRemainingMs();
@@ -302,7 +295,6 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    // ── emergency wipe ────────────────────────────────────────────────────────
 
     private void performEmergencyWipe() {
         deleteDatabase("passwords.db");
@@ -326,7 +318,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
 
     private void openPasswordScreen() {
         startActivity(new Intent(this, main_displey.class));
